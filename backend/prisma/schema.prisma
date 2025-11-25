@@ -1,0 +1,560 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["linux-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User & Authentication
+// ============================================================================
+
+model User {
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  password             String
+  firstName            String
+  lastName             String
+  phone                String?
+  avatar               String?
+  role                 UserRole @default(PLAYER)
+  onboardingCompleted  Boolean  @default(false)
+  
+  // Relations
+  player    Player?
+  captain   Captain?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  PLAYER
+  CAPTAIN
+  ADMIN
+}
+
+// ============================================================================
+// Core Models
+// ============================================================================
+
+model Sport {
+  id          String   @id @default(cuid())
+  name        String   @unique // "Pickleball", "Racquetball", "Tennis", etc.
+  description String?
+  icon        String?  // Icon reference for frontend
+  
+  // Relations
+  leagues  League[]
+  teams    Team[]
+  players  Player[]
+  playerRatings PlayerRating[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model League {
+  id          String   @id @default(cuid())
+  name        String   // "Pro League", "Casual League", etc.
+  description String?
+  sportId     String
+  sport       Sport    @relation(fields: [sportId], references: [id])
+  
+  // Relations
+  divisions Division[]
+  teams     Team[]
+  matches   Match[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([name, sportId])
+}
+
+model Division {
+  id       String @id @default(cuid())
+  name     String // "Premier", "Intermediate", "Beginner", etc.
+  leagueId String
+  league   League @relation(fields: [leagueId], references: [id])
+  
+  // Relations
+  teams     Team[]
+  standings Standing[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([name, leagueId])
+}
+
+model Club {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  logo        String?
+  city        String?
+  state       String?
+  
+  // Relations
+  teams Team[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// Team & Player Management
+// ============================================================================
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  sportId     String
+  sport       Sport    @relation(fields: [sportId], references: [id])
+  leagueId    String
+  league      League   @relation(fields: [leagueId], references: [id])
+  divisionId  String
+  division    Division @relation(fields: [divisionId], references: [id])
+  clubId      String?
+  club        Club?    @relation(fields: [clubId], references: [id])
+  
+  description String?
+  logo        String?
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  
+  // Relations
+  captain     Captain  @relation("TeamCaptain", fields: [captainId], references: [id])
+  captainId   String   @unique
+  players     Player[] @relation("TeamPlayers")
+  matches     Match[]  @relation("TeamMatches")
+  standings   Standing[]
+  members     TeamMember[] @relation("TeamMembers")
+  invitations TeamInvitation[]
+  chatMessages ChatMessage[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Captain {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+  
+  // Relations
+  team Team? @relation("TeamCaptain")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Player {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id])
+  sportId String
+  sport   Sport  @relation(fields: [sportId], references: [id])
+  
+  rating  Float  @default(3.0)
+  wins    Int    @default(0)
+  losses  Int    @default(0)
+  
+  // Relations
+  teams       Team[]          @relation("TeamPlayers")
+  matches     Match[]         @relation("PlayerMatches")
+  availability Availability[]
+  matchAvailability MatchAvailability[]
+  lineupAssignments LineupAssignment[]
+  playerRatings PlayerRating[]
+  stats       PlayerStats?
+  waitlistEntries WaitlistEntry[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayerStats {
+  id               String  @id @default(cuid())
+  playerId         String  @unique
+  player           Player  @relation(fields: [playerId], references: [id])
+  
+  gamesPlayed      Int     @default(0)
+  gamesWon         Int     @default(0)
+  gamesLost        Int     @default(0)
+  winPercentage    Float   @default(0.0)
+  pointsFor        Int     @default(0)
+  pointsAgainst    Int     @default(0)
+  streakWins       Int     @default(0)
+  streakType       String? // "win" or "loss"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// Matches & Standings
+// ============================================================================
+
+model Match {
+  id        String      @id @default(cuid())
+  leagueId  String
+  league    League      @relation(fields: [leagueId], references: [id])
+  
+  // Teams
+  team1Id   String
+  team1     Team        @relation("TeamMatches", fields: [team1Id], references: [id])
+  team2Id   String
+  
+  // Score
+  team1Score Int?
+  team2Score Int?
+  status    MatchStatus @default(SCHEDULED)
+  
+  // Details
+  scheduledAt DateTime
+  courtName   String?
+  
+  // Relations
+  players     Player[]    @relation("PlayerMatches")
+  lineups     Lineup[]
+  availability MatchAvailability[]
+  ratings     RatingHistory[]
+  waitlist    WaitlistEntry[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([leagueId, scheduledAt])
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Standing {
+  id          String   @id @default(cuid())
+  divisionId  String
+  division    Division @relation(fields: [divisionId], references: [id])
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id])
+  
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  winPercentage Float  @default(0.0)
+  gamesBack   Float    @default(0.0)
+  pointsFor   Int      @default(0)
+  pointsAgainst Int    @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([divisionId, teamId])
+}
+
+// ============================================================================
+// Availability & Scheduling
+// ============================================================================
+
+model Availability {
+  id        String @id @default(cuid())
+  playerId  String
+  player    Player @relation(fields: [playerId], references: [id])
+  
+  date      DateTime
+  available Boolean
+  notes     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([playerId, date])
+}
+
+// ============================================================================
+// Team Management (Enhanced)
+// ============================================================================
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      String   @default("player") // player, coach, assistant_captain
+  joinedAt  DateTime @default(now())
+  
+  team      Team     @relation("TeamMembers", fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@unique([teamId, userId])
+  @@map("TeamMember")
+}
+
+model TeamInvitation {
+  id              String   @id @default(cuid())
+  teamId          String
+  invitedEmail    String
+  invitedByUserId String
+  status          String   @default("pending") // pending, accepted, rejected, expired
+  expiresAt       DateTime
+  
+  team            Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([teamId, invitedEmail])
+  @@map("TeamInvitation")
+}
+
+// ============================================================================
+// Match & Lineup Management (Enhanced)
+// ============================================================================
+
+model Lineup {
+  id          String   @id @default(cuid())
+  matchId     String
+  lineupNum   Int      // Line 1, Line 2, Line 3, etc
+  homeTeam    Boolean
+  
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  assignments LineupAssignment[]
+  
+  @@unique([matchId, lineupNum, homeTeam])
+  @@map("Lineup")
+}
+
+model LineupAssignment {
+  id        String   @id @default(cuid())
+  lineupId  String
+  playerId  String
+  position  Int      // 1, 2, 3, 4 (or based on sport rules)
+  
+  lineup    Lineup   @relation(fields: [lineupId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  
+  @@unique([lineupId, position])
+  @@map("LineupAssignment")
+}
+
+// ============================================================================
+// Match Availability (Enhanced)
+// ============================================================================
+
+model MatchAvailability {
+  id        String   @id @default(cuid())
+  matchId   String
+  playerId  String
+  status    String   @default("no_response") // available, maybe, unavailable, no_response
+  notes     String?
+  
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  
+  @@unique([matchId, playerId])
+  @@map("MatchAvailability")
+}
+
+// ============================================================================
+// Ratings & Standing (Enhanced)
+// ============================================================================
+
+model PlayerRating {
+  id              String   @id @default(cuid())
+  playerId        String
+  sportId         String
+  currentRating   Float    @default(1500)
+  peakRating      Float    @default(1500)
+  
+  player          Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sport           Sport    @relation(fields: [sportId], references: [id])
+  
+  @@unique([playerId, sportId])
+  @@map("PlayerRating")
+}
+
+model RatingHistory {
+  id              String   @id @default(cuid())
+  playerId        String
+  matchId         String
+  ratingBefore    Float
+  ratingAfter     Float
+  ratingChange    Float
+  won             Boolean
+  
+  match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([playerId, createdAt])
+  @@map("RatingHistory")
+}
+
+// ============================================================================
+// Notifications & Messaging (Enhanced)
+// ============================================================================
+
+model Notification {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String   // "match_scheduled", "team_invite", "score_update", "lineup_set", "message"
+  title             String
+  message           String
+  read              Boolean  @default(false)
+  actionUrl         String?
+  relatedTeamId     String?
+  relatedMatchId    String?
+  relatedUserId     String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  readAt            DateTime?
+  
+  @@index([userId, read, createdAt])
+  @@map("Notification")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  message   String
+  deleted   Boolean  @default(false)
+  
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([teamId, createdAt])
+  @@map("ChatMessage")
+}
+
+// ============================================================================
+// Facilities & Court Booking
+// ============================================================================
+
+model Facility {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  city      String
+  state     String
+  zipCode   String
+  sport     String   // bocce, pickleball, padel
+  
+  courts    Court[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("Facility")
+}
+
+model Court {
+  id          String   @id @default(cuid())
+  facilityId  String
+  name        String
+  courtNum    Int
+  
+  facility    Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  bookings    CourtBooking[]
+  
+  @@unique([facilityId, courtNum])
+  @@map("Court")
+}
+
+model CourtBooking {
+  id        String   @id @default(cuid())
+  courtId   String
+  bookedBy  String
+  startTime DateTime
+  endTime   DateTime
+  teamId    String?
+  status    String   @default("confirmed") // confirmed, cancelled
+  notes     String?
+  
+  court     Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([courtId, startTime])
+  @@map("CourtBooking")
+}
+
+// ============================================================================
+// Dues & Payments
+// ============================================================================
+
+model DuesPayment {
+  id                      String   @id @default(cuid())
+  teamId                  String
+  playerId                String
+  amount                  Float
+  currency                String   @default("USD")
+  status                  String   @default("pending") // pending, paid, overdue
+  dueDate                 DateTime
+  paidDate                DateTime?
+  paymentMethod           String?  // stripe, cash, check
+  stripePaymentIntentId   String?
+  invoiceUrl              String?
+  
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  @@index([teamId, status])
+  @@index([playerId, dueDate])
+  @@map("DuesPayment")
+}
+
+// ============================================================================
+// Waitlist Management
+// ============================================================================
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  matchId   String
+  playerId  String
+  addedAt   DateTime @default(now())
+  position  Int      // Position in waitlist
+  
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  
+  @@unique([matchId, playerId])
+  @@index([matchId, position])
+  @@map("WaitlistEntry")
+}
+
+// ============================================================================
+// Achievements & Gamification
+// ============================================================================
+
+model Achievement {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String
+  icon        String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PlayerAchievement {
+  id            String @id @default(cuid())
+  playerId      String
+  achievementId String
+  
+  unlockedAt DateTime @default(now())
+  
+  @@unique([playerId, achievementId])
+}

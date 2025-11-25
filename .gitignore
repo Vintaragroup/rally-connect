@@ -1,0 +1,42 @@
+# macOS cruft
+.DS_Store
+
+# Node.js dependencies & debug logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+build/
+dist/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Environment & secret files (CRITICAL - NEVER COMMIT SECRETS)
+.env
+.env.*
+.env.local
+.env.development
+.env.staging
+.env.production
+!.env.example
+backend/.env
+backend/.env.*
+backend/.env.local
+backend/.env.development
+backend/.env.staging
+backend/.env.production
+!backend/.env.example
+
+# Editor/project state
+.vscode/
+.idea/
+*.swp
+
+# Misc runtime artifacts
+tmp/
+logs/
+*.log

@@ -1,0 +1,22 @@
+[
+  {
+    "fileName": "main-overview.mdc",
+    "description": "Complete system overview focusing on the sports league management platform architecture, key components, and high-level workflows"
+  },
+  {
+    "fileName": "onboarding-flow-logic.mdc",
+    "description": "Detailed documentation of the multi-step onboarding workflow, state transitions, and conditional routing based on user roles"
+  },
+  {
+    "fileName": "role-based-access-model.mdc",
+    "description": "Comprehensive documentation of the role-based access system, permissions structure, and feature sets for players vs captains"
+  },
+  {
+    "fileName": "team-management-flows.mdc",
+    "description": "Documentation of team creation, joining, and invitation processes including validation rules and membership management"
+  },
+  {
+    "fileName": "scoring-algorithms.mdc",
+    "description": "Documentation of player rating calculations, standings computations, achievement systems, and sport-specific scoring rules"
+  }
+]
