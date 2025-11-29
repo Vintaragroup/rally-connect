@@ -18,16 +18,19 @@ import {
   DollarSign,
   MessageCircle,
   CalendarClock,
-  MessageSquare
+  MessageSquare,
+  Settings2
 } from "lucide-react";
 import { SportIcon } from "./SportIcon";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface MoreScreenProps {
   onViewTeam?: () => void;
   onSignOut?: () => void;
   isCaptain?: boolean;
+  isAssociationAdmin?: boolean;
   onManageRoster?: () => void;
   onSetLineups?: () => void;
   onViewAnalytics?: () => void;
@@ -45,12 +48,14 @@ interface MoreScreenProps {
   onViewSettings?: () => void;
   onViewMyStandings?: () => void;
   onViewDivisionStandings?: () => void;
+  onViewAssociationAdmin?: () => void;
 }
 
 export function MoreScreen({ 
   onViewTeam, 
   onSignOut, 
-  isCaptain = false, 
+  isCaptain = false,
+  isAssociationAdmin = false,
   onManageRoster, 
   onSetLineups, 
   onViewAnalytics,
@@ -67,9 +72,15 @@ export function MoreScreen({
   onViewFeedback,
   onViewSettings,
   onViewMyStandings,
-  onViewDivisionStandings
+  onViewDivisionStandings,
+  onViewAssociationAdmin
 }: MoreScreenProps) {
   const { user } = useAuth();
+  const { user: currentUser } = useCurrentUser();
+  
+  // Use role-based admin status from currentUser if available, otherwise fall back to prop
+  const isAdmin = currentUser?.isAdmin ?? isAssociationAdmin;
+  const isCaptainRole = currentUser?.isCaptain ?? isCaptain;
   
   // Get user initials from email or name
   const getInitials = () => {
@@ -84,14 +95,11 @@ export function MoreScreen({
     name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User',
     email: user?.email || 'user@example.com',
     initials: getInitials(),
-    roles: isCaptain ? ["Captain"] : ["Player"],
+    roles: currentUser?.roles.map(r => r.charAt(0).toUpperCase() + r.slice(1)) || 
+           (isAdmin ? ["Admin"] : isCaptainRole ? ["Captain"] : ["Player"]),
   };
 
-  const myTeams = [
-    { name: "Merion Bocce Club", sport: "bocce" as const, role: "Captain" },
-    { name: "Your Pickleball Squad", sport: "pickleball" as const, role: "Player" },
-    { name: "Aronimink Padel", sport: "padel" as const, role: "Player" },
-  ];
+  const myTeams: any[] = [];
 
   const captainTools = [
     { icon: Users, label: "Manage Roster", badge: null },
@@ -262,6 +270,25 @@ export function MoreScreen({
                   </button>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Association Admin Tools */}
+        {isAdmin && (
+          <div>
+            <h3 className="text-sm text-[var(--color-text-secondary)] mb-2 px-2">
+              Admin Tools
+            </h3>
+            <div className="bg-[var(--color-bg-elevated)] rounded-2xl shadow-sm overflow-hidden">
+              <button
+                className="w-full p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
+                onClick={onViewAssociationAdmin}
+              >
+                <Settings2 className="w-5 h-5 text-[var(--color-text-secondary)]" />
+                <span className="flex-1">League Administration</span>
+                <ChevronRight className="w-5 h-5 text-[var(--color-text-secondary)]" />
+              </button>
             </div>
           </div>
         )}

@@ -1,18 +1,25 @@
 import { useState } from "react";
-import { MapPin, MessageSquare, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, MessageSquare, Edit, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 import { StatusChip } from "./StatusChip";
 import { SportIcon } from "./SportIcon";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import { toast } from "sonner";
 
 interface MatchDetailScreenProps {
   isCaptain?: boolean;
+  onSetLineups?: () => void;
+  onViewStats?: () => void;
+  onMessageTeam?: () => void;
+  onViewAvailability?: () => void;
 }
 
-export function MatchDetailScreen({ isCaptain = true }: MatchDetailScreenProps) {
+export function MatchDetailScreen({ isCaptain = true, onSetLineups, onViewStats, onMessageTeam, onViewAvailability }: MatchDetailScreenProps) {
   const [availability, setAvailability] = useState<"available" | "maybe" | "unavailable" | null>(null);
   const [note, setNote] = useState("");
   const [expandedLines, setExpandedLines] = useState<number[]>([0]);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleReason, setRescheduleReason] = useState("");
 
   const toggleLine = (lineIndex: number) => {
     setExpandedLines((prev) =>
@@ -22,41 +29,8 @@ export function MatchDetailScreen({ isCaptain = true }: MatchDetailScreenProps) 
     );
   };
 
-  const lines = [
-    {
-      lineNumber: 1,
-      homePlayers: [
-        { name: "Alex Rivera", rating: 4.2, isYou: true },
-        { name: "Jordan Chen", rating: 4.0 },
-      ],
-      awayPlayers: [
-        { name: "Taylor Morgan", rating: 4.1 },
-        { name: "Casey Williams", rating: 3.9 },
-      ],
-    },
-    {
-      lineNumber: 2,
-      homePlayers: [
-        { name: "Sam Patel", rating: 3.8 },
-        { name: "Riley Thompson", rating: 3.7 },
-      ],
-      awayPlayers: [
-        { name: "Drew Martinez", rating: 3.8 },
-        { name: "Blake Anderson", rating: 3.6 },
-      ],
-    },
-    {
-      lineNumber: 3,
-      homePlayers: [
-        { name: "Morgan Lee", rating: 3.5 },
-        { name: "Cameron Smith", rating: 3.4 },
-      ],
-      awayPlayers: [
-        { name: "Avery Johnson", rating: 3.6 },
-        { name: "Quinn Davis", rating: 3.3 },
-      ],
-    },
-  ];
+  // Mock match lineups removed - will be populated from API
+  const lines: any[] = [];
 
   return (
     <div className="pb-6">
@@ -156,7 +130,7 @@ export function MatchDetailScreen({ isCaptain = true }: MatchDetailScreenProps) 
         <div className="flex items-center justify-between mb-3">
           <h2>Lines & Lineups</h2>
           {isCaptain && (
-            <Button variant="ghost" size="sm" className="text-[var(--color-primary)]">
+            <Button variant="ghost" size="sm" className="text-[var(--color-primary)]" onClick={onSetLineups}>
               <Edit className="w-4 h-4 mr-1" />
               Edit
             </Button>
@@ -266,20 +240,102 @@ export function MatchDetailScreen({ isCaptain = true }: MatchDetailScreenProps) 
 
       {/* Captain Actions */}
       {isCaptain && (
-        <div className="px-4 mt-6">
+        <div className="px-4 mt-6 space-y-4">
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">⭐</span>
               <h3 className="text-base">Captain Tools</h3>
             </div>
             <div className="space-y-2">
-              <Button className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]">
+              <Button className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]" onClick={onMessageTeam}>
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Message Team
               </Button>
-              <Button variant="outline" className="w-full border-[var(--color-border)]">
+              <Button variant="outline" className="w-full border-[var(--color-border)]" onClick={onViewAvailability}>
                 View Availability Responses
               </Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-red-200 text-red-700 hover:bg-red-50"
+                onClick={() => setShowRescheduleModal(true)}
+              >
+                <AlertCircle className="w-4 h-4 mr-2" />
+                Request Reschedule
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold">Request Match Reschedule</h2>
+              <button
+                onClick={() => {
+                  setShowRescheduleModal(false);
+                  setRescheduleReason("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-700">
+                  <strong>Merion Bocce Club vs Radnor Rollers</strong>
+                  <br />
+                  Today, Nov 20 • 7:30 PM
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-medium mb-2">Why do you need to reschedule?</label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="Explain the reason (e.g., Key player unavailable, facility issue, conflicting event...)"
+                  className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  rows={4}
+                />
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700">
+                  ℹ️ Admins will review your request and contact you with alternative dates.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowRescheduleModal(false);
+                    setRescheduleReason("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  onClick={() => {
+                    if (!rescheduleReason.trim()) {
+                      toast.error("Please provide a reason");
+                      return;
+                    }
+                    toast.success("Reschedule request submitted to admins");
+                    setShowRescheduleModal(false);
+                    setRescheduleReason("");
+                  }}
+                >
+                  Submit Request
+                </Button>
+              </div>
             </div>
           </div>
         </div>

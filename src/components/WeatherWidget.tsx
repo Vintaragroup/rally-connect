@@ -1,6 +1,7 @@
-import { Cloud, CloudRain, Sun, Wind, Droplets, Eye, CloudSnow } from "lucide-react";
+import { Cloud, CloudRain, Sun, Wind, Droplets, Eye, CloudSnow, AlertCircle } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { motion } from "motion/react";
+import { useState, useEffect } from "react";
 
 interface WeatherWidgetProps {
   matchDate?: string;
@@ -32,27 +33,65 @@ export function WeatherWidget({
   location = "Merion, PA",
   showForecast = false 
 }: WeatherWidgetProps) {
-  
-  // Mock current weather
-  const currentWeather: WeatherCondition = {
-    temp: 68,
-    condition: "sunny",
-    description: "Partly Cloudy",
-    humidity: 45,
-    windSpeed: 8,
-    visibility: 10,
-    feelsLike: 66,
-    playability: "excellent",
-  };
+  const [currentWeather, setCurrentWeather] = useState<WeatherCondition | null>(null);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock 5-day forecast
-  const forecast: ForecastDay[] = [
-    { day: "Mon", high: 70, low: 55, condition: "sunny", precipChance: 5 },
-    { day: "Tue", high: 68, low: 54, condition: "cloudy", precipChance: 20 },
-    { day: "Wed", high: 65, low: 52, condition: "rainy", precipChance: 70 },
-    { day: "Thu", high: 72, low: 58, condition: "sunny", precipChance: 10 },
-    { day: "Fri", high: 74, low: 60, condition: "sunny", precipChance: 5 },
-  ];
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        setIsLoading(true);
+        // TODO: Replace with actual weather API call (OpenWeatherMap, WeatherAPI, etc.)
+        // const response = await fetch(`/api/weather?location=${encodeURIComponent(location)}`);
+        // const data = await response.json();
+        
+        // For now, use placeholder to indicate API integration needed
+        console.log(`⚠️ Weather API not yet integrated. Location: ${location}`);
+        
+        // Fallback to default weather data for UI testing
+        setCurrentWeather({
+          temp: 68,
+          condition: "sunny",
+          description: "Partly Cloudy",
+          humidity: 45,
+          windSpeed: 8,
+          visibility: 10,
+          feelsLike: 66,
+          playability: "excellent",
+        });
+
+        setForecast([
+          { day: "Mon", high: 70, low: 55, condition: "sunny", precipChance: 5 },
+          { day: "Tue", high: 68, low: 54, condition: "cloudy", precipChance: 20 },
+          { day: "Wed", high: 65, low: 52, condition: "rainy", precipChance: 70 },
+          { day: "Thu", high: 72, low: 58, condition: "sunny", precipChance: 10 },
+          { day: "Fri", high: 74, low: 60, condition: "sunny", precipChance: 5 },
+        ]);
+        
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch weather:", err);
+        setError("Unable to load weather data. Using defaults.");
+        
+        // Still show default weather on error
+        setCurrentWeather({
+          temp: 68,
+          condition: "cloudy",
+          description: "Unavailable",
+          humidity: 0,
+          windSpeed: 0,
+          visibility: 0,
+          feelsLike: 68,
+          playability: "good",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, [location]);
 
   const getWeatherIcon = (condition: WeatherCondition["condition"]) => {
     switch (condition) {
@@ -80,6 +119,23 @@ export function WeatherWidget({
       case "poor": return "bg-red-100 text-red-700";
     }
   };
+
+  if (isLoading || !currentWeather) {
+    return (
+      <div className="bg-[var(--color-bg-elevated)] rounded-xl p-3 h-16 animate-pulse flex items-center justify-center">
+        <p className="text-xs text-[var(--color-text-secondary)]">Loading weather...</p>
+      </div>
+    );
+  }
+
+  if (error && !currentWeather) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+        <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+        <p className="text-xs text-amber-700">Weather unavailable</p>
+      </div>
+    );
+  }
 
   const WeatherIcon = getWeatherIcon(currentWeather.condition);
 

@@ -1,11 +1,20 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Award, ChevronRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, ChevronRight, Activity } from "lucide-react";
 import { SportIcon } from "./SportIcon";
 import { Button } from "./ui/button";
+import { EmptyState } from "./EmptyState";
+import { SkeletonCard } from "./ui/skeleton";
 
-export function RatingsScreen() {
+interface RatingsScreenProps {
+  onViewAllLeaderboard?: () => void;
+  onViewPlayerProfile?: (playerName: string) => void;
+  onLearnAboutRatings?: () => void;
+}
+
+export function RatingsScreen({ onViewAllLeaderboard, onViewPlayerProfile, onLearnAboutRatings }: RatingsScreenProps = {}) {
   const [selectedSport, setSelectedSport] = useState<"bocce" | "pickleball" | "padel">("bocce");
   const [timeRange, setTimeRange] = useState<"30d" | "season" | "all">("season");
+  const [isLoading, setIsLoading] = useState(false);
 
   const ratings = {
     bocce: { current: 4.2, change: 0.3, trend: "up" as const },
@@ -13,51 +22,9 @@ export function RatingsScreen() {
     padel: { current: 4.5, change: 0.5, trend: "up" as const },
   };
 
-  const recentMatches = [
-    {
-      date: "Nov 13",
-      opponent: "vs Haverford Bocce",
-      result: "W 4–2",
-      ratingChange: +0.2,
-      yourRating: 4.2,
-    },
-    {
-      date: "Nov 6",
-      opponent: "vs Devon Bocce Club",
-      result: "W 4–1",
-      ratingChange: +0.1,
-      yourRating: 4.0,
-    },
-    {
-      date: "Oct 30",
-      opponent: "vs Radnor Rollers",
-      result: "L 2–4",
-      ratingChange: -0.1,
-      yourRating: 3.9,
-    },
-    {
-      date: "Oct 23",
-      opponent: "vs Wayne Bocce Society",
-      result: "L 1–4",
-      ratingChange: -0.2,
-      yourRating: 4.0,
-    },
-    {
-      date: "Oct 16",
-      opponent: "vs Bryn Mawr Bocci",
-      result: "W 4–0",
-      ratingChange: +0.3,
-      yourRating: 4.2,
-    },
-  ];
-
-  const leaderboard = [
-    { rank: 1, name: "Taylor Morgan", rating: 4.8, team: "Wayne Bocce Society" },
-    { rank: 2, name: "Jordan Martinez", rating: 4.7, team: "Radnor Rollers" },
-    { rank: 3, name: "Casey Williams", rating: 4.6, team: "Haverford Bocce" },
-    { rank: 4, name: "Alex Rivera", rating: 4.2, isYou: true, team: "Merion Bocce Club" },
-    { rank: 5, name: "Sam Thompson", rating: 4.1, team: "Devon Bocce Club" },
-  ];
+  // Mock data removed - will be fetched from API when available
+  const recentMatches: any[] = [];
+  const leaderboard: any[] = [];
 
   const currentRating = ratings[selectedSport];
 
@@ -154,8 +121,20 @@ export function RatingsScreen() {
         {/* Recent Impact */}
         <div>
           <h2 className="mb-3">Recent Impact</h2>
-          <div className="bg-[var(--color-bg-elevated)] rounded-2xl shadow-sm overflow-hidden">
-            {recentMatches.map((match, index) => (
+          {isLoading ? (
+            <div className="space-y-3">
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : recentMatches.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="No recent matches"
+              description="Your recent match history will appear here."
+            />
+          ) : (
+            <div className="bg-[var(--color-bg-elevated)] rounded-2xl shadow-sm overflow-hidden">
+              {recentMatches.map((match, index) => (
               <div
                 key={index}
                 className={`p-4 flex items-center justify-between ${
@@ -193,23 +172,40 @@ export function RatingsScreen() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Leaderboard */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2>Division Leaderboard</h2>
-            <button className="text-[var(--color-primary)] text-sm flex items-center gap-1">
+            <button 
+              onClick={onViewAllLeaderboard}
+              className="text-[var(--color-primary)] text-sm flex items-center gap-1"
+            >
               View all
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="bg-[var(--color-bg-elevated)] rounded-2xl shadow-sm overflow-hidden">
-            {leaderboard.map((player, index) => (
+          {isLoading ? (
+            <div className="space-y-3">
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : leaderboard.length === 0 ? (
+            <EmptyState
+              icon={Award}
+              title="No leaderboard data"
+              description="Leaderboard will appear once matches are completed."
+            />
+          ) : (
+            <div className="bg-[var(--color-bg-elevated)] rounded-2xl shadow-sm overflow-hidden">
+              {leaderboard.map((player, index) => (
               <div
                 key={index}
-                className={`p-4 flex items-center gap-3 ${
+                onClick={() => onViewPlayerProfile?.(player.name)}
+                className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-[var(--color-bg-secondary)] transition-colors ${
                   index !== leaderboard.length - 1 ? "border-b border-[var(--color-border)]" : ""
                 } ${player.isYou ? "bg-[var(--color-accent)]/10" : ""}`}
               >
@@ -240,7 +236,8 @@ export function RatingsScreen() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Info Card */}
@@ -250,7 +247,11 @@ export function RatingsScreen() {
             Your rating is calculated based on match results, opponent ratings, and performance
             consistency. Win against higher-rated players to gain more points.
           </p>
-          <Button variant="ghost" className="text-blue-700 hover:text-blue-900 mt-2 p-0 h-auto">
+          <Button 
+            onClick={onLearnAboutRatings}
+            variant="ghost" 
+            className="text-blue-700 hover:text-blue-900 mt-2 p-0 h-auto"
+          >
             Learn more about the rating system →
           </Button>
         </div>

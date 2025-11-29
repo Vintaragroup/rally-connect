@@ -30,9 +30,12 @@ import { SettingsScreen } from "./components/SettingsScreen";
 import { DivisionStandingsScreen } from "./components/DivisionStandingsScreen";
 import { TeamSeasonReportScreen } from "./components/TeamSeasonReportScreen";
 import { MyStandingsScreen } from "./components/MyStandingsScreen";
-import { toast } from "sonner@2.0.3";
+import { AdminLayout } from "./components/AdminLayout";
+import { OfflineBanner } from "./components/OfflineBanner";
+import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
 import { useAuth } from "./contexts/AuthContext";
+import { useCurrentUser } from "./hooks/useCurrentUser";
 
 type Screen = 
   | "welcome" 
@@ -64,17 +67,19 @@ type Screen =
   | "division-standings"
   | "team-season-report"
   | "my-standings"
+  | "admin"
   | "loading"
   | "oauth-callback"
   | "debug";
 
 export default function App() {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const { user: currentUser, loading: userLoading } = useCurrentUser();
   const [currentScreen, setCurrentScreen] = useState<Screen>("loading");
-  const [activeTab, setActiveTab] = useState<"home" | "schedule" | "teams" | "ratings" | "more">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "schedule" | "teams" | "ratings" | "more" | "admin">("home");
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [userRole, setUserRole] = useState<"player" | "captain" | null>(null);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [userRole, setUserRole] = useState<"player" | "captain" | "admin" | null>(null);
+  const [isAssociationAdmin, setIsAssociationAdmin] = useState(false);
   const [userSynced, setUserSynced] = useState(false);
 
   // Sync user to backend on first authentication
@@ -108,44 +113,96 @@ export default function App() {
     syncUserToBackend();
   }, [user?.id, isAuthenticated, isLoading, userSynced]);
 
-  // Fetch onboarding status from backend AFTER user is synced
+  // Update admin status based on currentUser roles
   useEffect(() => {
-    const fetchOnboardingStatus = async () => {
-      // Only fetch after user is synced
-      if (user?.id && isAuthenticated && !isLoading && userSynced) {
-        try {
-          const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4800";
-          const response = await fetch(`${apiUrl}/auth/me`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            console.log('✓ Fetched onboarding status:', data.onboardingCompleted);
-            setOnboardingCompleted(data.onboardingCompleted ?? false);
-          } else if (response.status === 404) {
-            // User not found in backend - clear session and sign out
-            console.warn('⚠️ User not found in backend, clearing session');
-            await import('./lib/supabase/client').then(mod => mod.signOutUser());
-            setOnboardingCompleted(false);
-          } else {
-            console.warn('⚠️ Failed to fetch onboarding status:', response.status);
-          }
-        } catch (error) {
-          console.error('⚠️ Error fetching onboarding status:', error);
-        }
-      }
-    };
-
-    fetchOnboardingStatus();
-  }, [user?.id, isAuthenticated, isLoading, userSynced]);
+    if (currentUser) {
+      setIsAssociationAdmin(currentUser.isAdmin);
+    }
+  }, [currentUser?.isAdmin]);
 
   // Route based on current URL path and auth state
   useEffect(() => {
     // FIRST: Check special routes (these take precedence over auth state)
     const currentPath = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    const testScreen = searchParams.get('test');
+    
+    // Allow test mode for team chat
+    if (testScreen === 'team-chat') {
+      console.log('✓ Accessing team chat in test mode');
+      setCurrentScreen("team-chat");
+      return;
+    }
+    // Allow test mode for teams screen
+    if (testScreen === 'teams') {
+      console.log('✓ Accessing teams screen in test mode');
+      setCurrentScreen("teams");
+      setActiveTab("teams");
+      setUserRole("captain");
+      return;
+    }
+    // Allow test mode for team detail
+    if (testScreen === 'team-detail') {
+      console.log('✓ Accessing team detail in test mode');
+      setCurrentScreen("team-detail");
+      setUserRole("captain");
+      return;
+    }
+
+    // Allow test mode for team detail as admin
+    if (testScreen === 'team-detail-admin') {
+      console.log('✓ Accessing team detail as admin in test mode');
+      setCurrentScreen("team-detail");
+      setUserRole("player");
+      setIsAssociationAdmin(true);
+      return;
+    }
+
+    // Allow test mode for match detail
+    if (testScreen === 'match-detail') {
+      console.log('✓ Accessing match detail in test mode');
+      setCurrentScreen("match-detail");
+      setUserRole("captain");
+      return;
+    }
+    // Allow test mode for ratings
+    if (testScreen === 'ratings') {
+      console.log('✓ Accessing ratings in test mode');
+      setCurrentScreen("ratings");
+      return;
+    }
+
+    // Allow test mode for schedule as captain
+    if (testScreen === 'schedule-captain') {
+      console.log('✓ Accessing schedule as captain in test mode');
+      setCurrentScreen("schedule");
+      setUserRole("captain");
+      return;
+    }
+
+    // Allow test mode for schedule as admin
+    if (testScreen === 'schedule-admin') {
+      console.log('✓ Accessing schedule as admin in test mode');
+      setCurrentScreen("schedule");
+      setUserRole("admin");
+      return;
+    }
+
+    // Allow test mode for schedule as player
+    if (testScreen === 'schedule-player') {
+      console.log('✓ Accessing schedule as player in test mode');
+      setCurrentScreen("schedule");
+      setUserRole("player");
+      return;
+    }
+
+    // Allow test mode for home
+    if (testScreen === 'home') {
+      console.log('✓ Accessing home in test mode');
+      setCurrentScreen("home");
+      setUserRole("player");
+      return;
+    }
     
     if (currentPath.includes('/auth/callback')) {
       console.log('✓ Detected OAuth callback route');
@@ -160,10 +217,10 @@ export default function App() {
     }
 
     // THEN: Route based on auth state
-    if (isLoading) {
+    if (isLoading || userLoading) {
       setCurrentScreen("loading");
-    } else if (isAuthenticated && user) {
-      if (onboardingCompleted) {
+    } else if (isAuthenticated && user && currentUser) {
+      if (currentUser.onboardingCompleted) {
         // Returning user who completed onboarding - go to home
         setCurrentScreen("home");
         setIsReturningUser(true);
@@ -176,11 +233,21 @@ export default function App() {
       // Not authenticated - show welcome screen
       setCurrentScreen("welcome");
     }
-  }, [isLoading, isAuthenticated, user, onboardingCompleted]);
+  }, [isLoading, userLoading, isAuthenticated, user, currentUser]);
+
+  // Role-based redirect guard: prevent unauthorized access to admin screens
+  useEffect(() => {
+    if (currentScreen === "admin" && currentUser && !currentUser.isAdmin) {
+      console.warn('⚠️ Non-admin user tried to access admin screen, redirecting to home');
+      setCurrentScreen("home");
+      setActiveTab("home");
+    }
+  }, [currentScreen, currentUser]);
 
   return (
     <div className="w-full min-h-screen bg-[var(--color-bg)]">
       <Toaster />
+      <OfflineBanner />
       
       {/* Loading Screen */}
       {currentScreen === "loading" && (
@@ -255,7 +322,9 @@ export default function App() {
                   );
                   
                   if (response.ok) {
-                    setOnboardingCompleted(true);
+                    console.log('✓ Onboarding marked complete, refetching user data');
+                    // Refetch user to get updated onboardingCompleted status
+                    // The useCurrentUser hook will update automatically
                   } else {
                     console.error("Failed to mark onboarding complete");
                   }
@@ -267,8 +336,8 @@ export default function App() {
             };
             saveOnboarding();
             
-            // The routing will be handled by the useEffect watching authState
-            // Once onboarding is marked complete, it will navigate to home
+            // The routing will be handled by the useEffect watching currentUser
+            // Once currentUser updates with onboardingCompleted=true, it will navigate to home
           }}
         />
       )}
@@ -285,7 +354,21 @@ export default function App() {
             setCurrentScreen(tab);
           }}
         >
-          <MatchDetailScreen isCaptain={userRole === "captain"} />
+          <MatchDetailScreen 
+            isCaptain={currentUser?.isCaptain || false}
+            onSetLineups={() => {
+              toast.info("Set Lineups feature coming soon!");
+            }}
+            onViewStats={() => {
+              toast.info("Match Stats feature coming soon!");
+            }}
+            onMessageTeam={() => {
+              toast.info("Team messaging feature coming soon!");
+            }}
+            onViewAvailability={() => {
+              toast.info("Availability responses feature coming soon!");
+            }}
+          />
         </AppShell>
       )}
       {currentScreen === "team-detail" && (
@@ -306,7 +389,14 @@ export default function App() {
             onViewMatch={() => {
               setCurrentScreen("match-detail");
             }}
-            isCaptain={userRole === "captain"}
+            onViewTeamChat={() => {
+              setCurrentScreen("team-chat");
+            }}
+            onViewTeamReport={() => {
+              setCurrentScreen("team-season-report");
+            }}
+            isCaptain={currentUser?.isCaptain || false}
+            isAssociationAdmin={isAssociationAdmin}
           />
         </AppShell>
       )}
@@ -345,7 +435,7 @@ export default function App() {
             onViewStandings={() => {
               setCurrentScreen("standings");
             }}
-            isCaptain={userRole === "captain"}
+            isCaptain={currentUser?.isCaptain || false}
           />
         </AppShell>
       )}
@@ -367,6 +457,10 @@ export default function App() {
             onViewMatch={() => {
               setCurrentScreen("match-detail");
             }}
+            userRole={userRole}
+            isAdmin={currentUser?.isAdmin || false}
+            isCaptain={currentUser?.isCaptain || false}
+            isPlayer={currentUser?.isPlayer || true}
           />
         </AppShell>
       )}
@@ -388,7 +482,11 @@ export default function App() {
             onViewTeam={() => {
               setCurrentScreen("team-detail");
             }}
-            isCaptain={userRole === "captain"}
+            onOpenChat={() => {
+              setCurrentScreen("team-chat");
+            }}
+            isCaptain={currentUser?.isCaptain || userRole === "captain" || false}
+            showChatIcon={true}
           />
         </AppShell>
       )}
@@ -406,7 +504,11 @@ export default function App() {
             setCurrentScreen(tab);
           }}
         >
-          <RatingsScreen />
+          <RatingsScreen 
+            onViewAllLeaderboard={() => toast.info("Full leaderboard view coming soon!")}
+            onViewPlayerProfile={(playerName) => toast.info(`Viewing profile for ${playerName} - feature coming soon!`)}
+            onLearnAboutRatings={() => toast.info("Rating system details coming soon!")}
+          />
         </AppShell>
       )}
       {currentScreen === "more" && (
@@ -486,7 +588,11 @@ export default function App() {
             onViewDivisionStandings={() => {
               setCurrentScreen("division-standings");
             }}
-            isCaptain={userRole === "captain"}
+            onViewAssociationAdmin={() => {
+              setCurrentScreen("admin");
+            }}
+            isCaptain={currentUser?.isCaptain || false}
+            isAssociationAdmin={isAssociationAdmin}
           />
         </AppShell>
       )}
@@ -530,7 +636,7 @@ export default function App() {
         >
           <WaitlistScreen 
             onBack={() => setCurrentScreen("home")}
-            isCaptain={userRole === "captain"}
+            isCaptain={currentUser?.isCaptain || false}
           />
         </AppShell>
       )}
@@ -741,7 +847,7 @@ export default function App() {
         >
           <PracticeSchedulerScreen 
             onBack={() => setCurrentScreen("home")}
-            isCaptain={userRole === "captain"}
+            isCaptain={currentUser?.isCaptain || false}
           />
         </AppShell>
       )}
@@ -799,7 +905,7 @@ export default function App() {
         >
           <DivisionStandingsScreen 
             onBack={() => setCurrentScreen("home")}
-            onTeamClick={(teamId) => setCurrentScreen("team-season-report")}
+            onTeamClick={() => setCurrentScreen("team-season-report")}
           />
         </AppShell>
       )}
@@ -808,7 +914,7 @@ export default function App() {
           title="Team Season Report"
           showBack
           onBack={() => {
-            setCurrentScreen("division-standings");
+            setCurrentScreen("team-detail");
           }}
           activeTab={activeTab}
           onTabChange={(tab) => {
@@ -817,7 +923,7 @@ export default function App() {
           }}
         >
           <TeamSeasonReportScreen 
-            onBack={() => setCurrentScreen("division-standings")}
+            onBack={() => setCurrentScreen("team-detail")}
           />
         </AppShell>
       )}
@@ -840,6 +946,14 @@ export default function App() {
             onViewTeamReport={() => setCurrentScreen("team-season-report")}
           />
         </AppShell>
+      )}
+      {currentScreen === "admin" && (
+        <AdminLayout 
+          onExit={() => {
+            setCurrentScreen("more");
+            setActiveTab("more");
+          }}
+        />
       )}
     </div>
   );

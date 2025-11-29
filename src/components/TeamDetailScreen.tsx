@@ -1,36 +1,24 @@
 import { useState } from "react";
-import { Trophy, Calendar, MessageSquare, ChevronRight } from "lucide-react";
+import { Trophy, Calendar, MessageSquare, ChevronRight, Users } from "lucide-react";
 import { SportIcon } from "./SportIcon";
 import { Button } from "./ui/button";
 import { MatchCard } from "./MatchCard";
+import { EmptyState } from "./EmptyState";
 
 interface TeamDetailScreenProps {
   onViewMatch: () => void;
+  onViewTeamChat?: () => void;
+  onViewTeamReport?: () => void;
   isCaptain?: boolean;
+  isAssociationAdmin?: boolean;
 }
 
-export function TeamDetailScreen({ onViewMatch, isCaptain = false }: TeamDetailScreenProps) {
+export function TeamDetailScreen({ onViewMatch, onViewTeamChat, onViewTeamReport, isCaptain = false, isAssociationAdmin = false }: TeamDetailScreenProps) {
   const [activeTab, setActiveTab] = useState<"roster" | "schedule" | "standings">("roster");
 
-  const roster = [
-    { name: "Alex Rivera", rating: 4.2, role: "Captain", initials: "AR", isYou: true },
-    { name: "Jordan Chen", rating: 4.0, role: "Player", initials: "JC" },
-    { name: "Sam Patel", rating: 3.8, role: "Player", initials: "SP" },
-    { name: "Riley Thompson", rating: 3.7, role: "Player", initials: "RT" },
-    { name: "Morgan Lee", rating: 3.5, role: "Player", initials: "ML" },
-    { name: "Cameron Smith", rating: 3.4, role: "Player", initials: "CS" },
-  ];
+  const roster: any[] = [];
 
-  const standings = [
-    { position: 1, team: "Wayne Bocce Society", record: "8–1", points: 24 },
-    { position: 2, team: "Merion Bocce Club", record: "7–2", points: 21, isYourTeam: true },
-    { position: 3, team: "Radnor Rollers", record: "6–3", points: 18 },
-    { position: 4, team: "Haverford Bocce", record: "5–4", points: 15 },
-    { position: 5, team: "Bryn Mawr Bocci", record: "4–5", points: 12 },
-    { position: 6, team: "Devon Bocce Club", record: "3–6", points: 9 },
-    { position: 7, team: "Ardmore Rollers", record: "2–7", points: 6 },
-    { position: 8, team: "Gladwyne Bocce", record: "1–8", points: 3 },
-  ];
+  const standings: any[] = [];
 
   return (
     <div className="pb-6">
@@ -100,7 +88,14 @@ export function TeamDetailScreen({ onViewMatch, isCaptain = false }: TeamDetailS
             </Button>
           )}
           
-          {roster.map((player, index) => (
+          {roster.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="No roster yet"
+              description="Team members will appear here once they're added."
+            />
+          ) : (
+            roster.map((player, index) => (
             <div
               key={index}
               className={`bg-[var(--color-bg-elevated)] rounded-2xl p-4 shadow-sm ${
@@ -131,9 +126,10 @@ export function TeamDetailScreen({ onViewMatch, isCaptain = false }: TeamDetailS
                 </div>
               </div>
             </div>
-          ))}
+            ))
+          )}
 
-          <Button variant="outline" className="w-full border-[var(--color-border)] mt-4">
+          <Button variant="outline" className="w-full border-[var(--color-border)] mt-4" onClick={onViewTeamChat}>
             <MessageSquare className="w-4 h-4 mr-2" />
             Team Chat
           </Button>
@@ -191,7 +187,11 @@ export function TeamDetailScreen({ onViewMatch, isCaptain = false }: TeamDetailS
 
       {/* Standings Tab */}
       {activeTab === "standings" && (
-        <div className="p-4">
+        <div className="p-4 space-y-3">
+          <Button variant="outline" className="w-full border-[var(--color-border)]" onClick={onViewTeamReport}>
+            <Trophy className="w-4 h-4 mr-2" />
+            View Team Report
+          </Button>
           <div className="bg-[var(--color-bg-elevated)] rounded-2xl shadow-sm overflow-hidden">
             {standings.map((team, index) => (
               <div

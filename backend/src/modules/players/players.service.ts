@@ -10,7 +10,11 @@ export class PlayersService {
       include: {
         user: true,
         sport: true,
-        teams: true,
+        teamPlayers: {
+          include: {
+            team: true,
+          },
+        },
         stats: true,
       },
     });
@@ -22,7 +26,11 @@ export class PlayersService {
       include: {
         user: true,
         sport: true,
-        teams: true,
+        teamPlayers: {
+          include: {
+            team: true,
+          },
+        },
         stats: true,
         availability: true,
       },

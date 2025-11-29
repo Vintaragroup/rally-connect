@@ -7,6 +7,7 @@ import { InvitePlayersScreen } from "./InvitePlayersScreen";
 import { JoinTeamScreen } from "./JoinTeamScreen";
 import { OnboardingCompleteScreen } from "./OnboardingCompleteScreen";
 import { useAuth } from "@/contexts/AuthContext";
+import { completeOnboarding, syncUserProfile } from "@/lib/api/authApi";
 
 interface OnboardingFlowProps {
   onComplete: (role: "player" | "captain") => void;
@@ -109,8 +110,37 @@ export function OnboardingFlow({ onComplete, isReturningUser = false }: Onboardi
     setCurrentStep("complete");
   };
 
-  const handleComplete = () => {
-    console.log("Onboarding complete with data:", data);
+  const handleComplete = async () => {
+    console.log("✅ Onboarding complete with data:", data);
+    
+    // Call backend to mark onboarding as complete and sync profile
+    if (user?.id) {
+      try {
+        // Sync user profile with backend
+        if (data.profile) {
+          await syncUserProfile({
+            full_name: data.profile.name,
+            phone: data.profile.phone,
+            sports: data.sports,
+            role: data.role || "player",
+          });
+        }
+
+        // Mark onboarding as complete
+        await completeOnboarding({
+          sports: data.sports,
+          role: data.role || "player",
+          teamId: data.team?.id,
+          teamName: data.team?.name,
+        });
+        
+        console.log("✓ Onboarding marked complete on backend");
+      } catch (err) {
+        console.error("Error completing onboarding on backend:", err);
+        // Still proceed even if backend fails (fallback gracefully)
+      }
+    }
+    
     onComplete(data.role!);
   };
 

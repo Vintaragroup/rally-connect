@@ -32,92 +32,9 @@ export function PhotoGalleryScreen({ onBack }: PhotoGalleryScreenProps) {
   const [selectedTab, setSelectedTab] = useState<"photos" | "albums">("photos");
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
-  const albums: Album[] = [
-    {
-      id: "a1",
-      title: "Championship Finals 2024",
-      date: "Dec 15, 2024",
-      photoCount: 24,
-      coverPhoto: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400",
-    },
-    {
-      id: "a2",
-      title: "Team Social Event",
-      date: "Nov 28, 2024",
-      photoCount: 18,
-      coverPhoto: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400",
-    },
-    {
-      id: "a3",
-      title: "Season Opener",
-      date: "Oct 10, 2024",
-      photoCount: 15,
-      coverPhoto: "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400",
-    },
-  ];
+  const albums: Album[] = [];
 
-  const photos: Photo[] = [
-    {
-      id: "p1",
-      url: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400",
-      caption: "Championship celebration! 🏆",
-      date: "Dec 15, 2024",
-      uploadedBy: "Alex Rivera",
-      event: "Championship Finals",
-      likes: 24,
-      isLiked: true,
-    },
-    {
-      id: "p2",
-      url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400",
-      caption: "Great team effort tonight",
-      date: "Dec 12, 2024",
-      uploadedBy: "Jordan Chen",
-      event: "Regular Season",
-      likes: 18,
-      isLiked: false,
-    },
-    {
-      id: "p3",
-      url: "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400",
-      caption: "Pre-match warm up",
-      date: "Dec 10, 2024",
-      uploadedBy: "Sam Martinez",
-      event: "Regular Season",
-      likes: 15,
-      isLiked: true,
-    },
-    {
-      id: "p4",
-      url: "https://images.unsplash.com/photo-1530915365347-e35b749a0381?w=400",
-      caption: "Team bonding session",
-      date: "Nov 28, 2024",
-      uploadedBy: "Taylor Kim",
-      event: "Team Social",
-      likes: 32,
-      isLiked: false,
-    },
-    {
-      id: "p5",
-      url: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400",
-      caption: "Practice makes perfect",
-      date: "Nov 20, 2024",
-      uploadedBy: "Morgan Lee",
-      event: "Practice",
-      likes: 12,
-      isLiked: true,
-    },
-    {
-      id: "p6",
-      url: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400",
-      caption: "Victory formation! 💪",
-      date: "Nov 15, 2024",
-      uploadedBy: "Alex Rivera",
-      event: "Regular Season",
-      likes: 28,
-      isLiked: false,
-    },
-  ];
+  const photos: Photo[] = [];
 
   const handleLike = (photoId: string) => {
     toast.success("Photo liked!");

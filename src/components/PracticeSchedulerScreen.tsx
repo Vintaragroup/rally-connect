@@ -30,75 +30,7 @@ export function PracticeSchedulerScreen({ onBack, isCaptain = false }: PracticeS
   const [selectedTab, setSelectedTab] = useState<"upcoming" | "past">("upcoming");
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const practices: Practice[] = [
-    {
-      id: "p1",
-      title: "Team Practice Session",
-      date: "Dec 22, 2024",
-      time: "6:00 PM",
-      location: "Merion Cricket Club",
-      duration: "2 hours",
-      sport: "bocce",
-      organizer: "Jordan Chen",
-      attendees: 8,
-      maxAttendees: 12,
-      status: "upcoming",
-      isGoing: true,
-      notes: "Bring your own water bottles. Focus on serving technique.",
-    },
-    {
-      id: "p2",
-      title: "Advanced Skills Workshop",
-      date: "Dec 24, 2024",
-      time: "10:00 AM",
-      location: "Radnor Community Center",
-      duration: "3 hours",
-      sport: "pickleball",
-      organizer: "Sam Martinez",
-      attendees: 6,
-      maxAttendees: 10,
-      status: "upcoming",
-      isGoing: false,
-    },
-    {
-      id: "p3",
-      title: "Open Practice",
-      date: "Dec 26, 2024",
-      time: "4:00 PM",
-      location: "Wayne Sports Complex",
-      duration: "1.5 hours",
-      sport: "padel",
-      organizer: "Alex Rivera",
-      attendees: 5,
-      status: "upcoming",
-      isGoing: true,
-    },
-    {
-      id: "p4",
-      title: "Team Practice Session",
-      date: "Dec 18, 2024",
-      time: "6:00 PM",
-      location: "Merion Cricket Club",
-      duration: "2 hours",
-      sport: "bocce",
-      organizer: "Jordan Chen",
-      attendees: 10,
-      maxAttendees: 12,
-      status: "past",
-    },
-    {
-      id: "p5",
-      title: "Strategy Session",
-      date: "Dec 15, 2024",
-      time: "7:00 PM",
-      location: "Haverford Community Hall",
-      duration: "1 hour",
-      sport: "bocce",
-      organizer: "Taylor Kim",
-      attendees: 8,
-      status: "past",
-    },
-  ];
+  const practices: Practice[] = [];
 
   const filteredPractices = practices.filter(p => p.status === selectedTab);
 

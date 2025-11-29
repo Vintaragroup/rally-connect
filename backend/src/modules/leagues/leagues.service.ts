@@ -7,14 +7,32 @@ export class LeaguesService {
 
   async getAllLeagues() {
     return this.prisma.league.findMany({
-      include: { sport: true, divisions: true },
+      include: {
+        sport: true,
+        seasons: {
+          include: {
+            divisions: true,
+          },
+        },
+      },
     });
   }
 
   async getLeagueById(id: string) {
     return this.prisma.league.findUnique({
       where: { id },
-      include: { sport: true, divisions: true, teams: true },
+      include: {
+        sport: true,
+        seasons: {
+          include: {
+            divisions: {
+              include: {
+                teams: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 }

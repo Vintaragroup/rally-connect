@@ -25,6 +25,7 @@ function initializeClient() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      flowType: 'implicit',
     },
   });
 

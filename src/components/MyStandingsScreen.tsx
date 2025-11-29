@@ -10,34 +10,16 @@ interface MyStandingsScreenProps {
 
 export function MyStandingsScreen({ onViewFullStandings, onViewTeamReport }: MyStandingsScreenProps) {
   // Mock data - player's team
-  const myTeam = {
-    name: "Merion Bocce Club",
-    division: "Division 1",
-    season: "Winter 24–25",
-    rank: 1,
-    totalTeams: 6,
-    wins: 5,
-    losses: 0,
-    gamesWon: 12,
-    gamesLost: 3,
-    pointsScored: 126,
-    pointsAgainst: 77
-  };
+  const myTeam = null;
 
   // Top teams in division
-  const topTeams = [
-    { rank: 1, name: "Merion Bocce Club", record: "5–0", netPoints: 49, isMyTeam: true },
-    { rank: 2, name: "Radnor Rollers", record: "4–1", netPoints: 26, isMyTeam: false },
-    { rank: 3, name: "Wayne Warriors", record: "3–2", netPoints: 7, isMyTeam: false },
-    { rank: 4, name: "Bryn Mawr Ballers", record: "2–3", netPoints: -14, isMyTeam: false },
-    { rank: 5, name: "Haverford Hawks", record: "1–4", netPoints: -37, isMyTeam: false }
-  ];
+  const topTeams: any[] = [];
 
-  const totalMatches = myTeam.wins + myTeam.losses;
-  const matchWinPercent = totalMatches > 0 ? Math.round((myTeam.wins / totalMatches) * 100) : 0;
-  const totalGames = myTeam.gamesWon + myTeam.gamesLost;
-  const gameWinPercent = totalGames > 0 ? Math.round((myTeam.gamesWon / totalGames) * 100) : 0;
-  const netPoints = myTeam.pointsScored - myTeam.pointsAgainst;
+  const totalMatches = myTeam ? myTeam.wins + myTeam.losses : 0;
+  const matchWinPercent = totalMatches > 0 ? Math.round((myTeam!.wins / totalMatches) * 100) : 0;
+  const totalGames = myTeam ? myTeam.gamesWon + myTeam.gamesLost : 0;
+  const gameWinPercent = totalGames > 0 ? Math.round((myTeam!.gamesWon / totalGames) * 100) : 0;
+  const netPoints = myTeam ? myTeam.pointsScored - myTeam.pointsAgainst : 0;
 
   const getRankEmoji = () => {
     const emojis = ["🥇", "🥈", "🥉"];
@@ -57,8 +39,20 @@ export function MyStandingsScreen({ onViewFullStandings, onViewTeamReport }: MyS
         </div>
       </div>
 
-      {/* Current Team Standing Card */}
-      <div className="px-3 sm:px-4 -mt-4 mb-6">
+      {!myTeam ? (
+        <div className="p-4">
+          <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-8 text-center">
+            <Trophy className="w-12 h-12 text-[var(--color-text-tertiary)] mx-auto mb-3" />
+            <p className="text-[var(--color-text-secondary)]">No team data available</p>
+            <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
+              Join or create a team to see standings
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Current Team Standing Card */}
+          <div className="px-3 sm:px-4 -mt-4 mb-6">
         <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-[var(--color-accent)]">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -254,6 +248,8 @@ export function MyStandingsScreen({ onViewFullStandings, onViewTeamReport }: MyS
           </Button>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -15,10 +15,42 @@ export class AuthService {
     }
   }
 
+  /**
+   * Get user profile with onboarding status
+   */
+  async getUserProfile(userId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        onboardingCompleted: (user as any).onboardingCompleted ?? false,
+      };
+    } catch (error) {
+      console.error('❌ Error getting user profile:', error);
+      return null;
+    }
+  }
+
   async getUserWithOnboardingStatus(userId: string) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
+        include: {
+          associationAdmin: true,
+          captain: true,
+          player: true,
+        },
       });
 
       if (!user) {
@@ -33,8 +65,33 @@ export class AuthService {
             lastName: '',
             role: 'PLAYER',
           },
+          roles: [],
+          displayName: 'User',
           onboardingCompleted: false,
         };
+      }
+
+      // Determine roles based on relations and UserRole
+      const roles: string[] = [];
+      
+      // Check if user is an admin
+      if (user.associationAdmin || user.role === 'ADMIN') {
+        roles.push('admin');
+      }
+      
+      // Check if user is a captain
+      if (user.captain || user.role === 'CAPTAIN') {
+        roles.push('captain');
+      }
+      
+      // Check if user is a player
+      if (user.player || user.role === 'PLAYER') {
+        roles.push('player');
+      }
+      
+      // Ensure at least 'player' role if no others
+      if (roles.length === 0) {
+        roles.push('player');
       }
 
       return {
@@ -45,6 +102,8 @@ export class AuthService {
           lastName: user.lastName,
           role: user.role,
         },
+        roles,
+        displayName: `${user.firstName} ${user.lastName}`.trim() || user.email,
         onboardingCompleted: (user as any).onboardingCompleted ?? false,
       };
     } catch (error) {
@@ -53,25 +112,54 @@ export class AuthService {
     }
   }
 
-  async markOnboardingComplete(userId: string) {
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        // Cast to any to bypass Prisma type checking until client is regenerated
-        ...(({ onboardingCompleted: true } as any)),
-      },
-    });
+  async markOnboardingComplete(userId: string, data?: any) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          onboardingCompleted: true,
+          // Store additional onboarding data if provided
+          ...(data?.sports && { sports: data.sports }),
+          ...(data?.role && { role: data.role.toUpperCase() }),
+        },
+      });
 
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
-      onboardingCompleted: (user as any).onboardingCompleted ?? true,
-    };
+      // TODO: Create corresponding Player or Captain record based on role
+      // if (data?.role === 'captain' && data?.teamId) {
+      //   await this.prisma.captain.create({
+      //     data: {
+      //       userId: user.id,
+      //       teamId: data.teamId,
+      //     },
+      //   });
+      // } else if (data?.role === 'player') {
+      //   await this.prisma.player.create({
+      //     data: {
+      //       userId: user.id,
+      //     },
+      //   });
+      // }
+
+      // TODO: Emit analytics event
+      // this.analyticsService.trackOnboardingComplete(user.id);
+
+      console.log(`✓ Onboarding completed for user: ${userId}`);
+
+      return {
+        success: true,
+        message: 'Onboarding completed',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          onboardingCompleted: user.onboardingCompleted,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error marking onboarding complete:', error);
+      throw error;
+    }
   }
 
   /**
@@ -118,8 +206,7 @@ export class AuthService {
           firstName: firstName || displayName,
           lastName: lastName || '',
           password: '', // OAuth users don't have local passwords
-          // Cast to any to bypass Prisma type checking
-          ...(({ onboardingCompleted: false } as any)),
+          onboardingCompleted: false,
         },
       });
 
@@ -180,6 +267,69 @@ export class AuthService {
     } catch (err) {
       console.error('❌ Error confirming email:', err);
       return { success: false, message: String(err) };
+    }
+  }
+
+  async findUserByEmail(email: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      };
+    } catch (error) {
+      console.error('❌ Error finding user by email:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update user profile data (called after onboarding)
+   */
+  async updateUserProfile(userId: string, data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    sports?: string[];
+    role?: string;
+  }) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          firstName: data.firstName || undefined,
+          lastName: data.lastName || undefined,
+          // Store additional profile fields if schema supports them
+          ...(data.sports && { sports: data.sports }),
+          ...(data.role && { role: data.role.toUpperCase() }),
+        },
+      });
+
+      console.log(`✓ User profile updated: ${userId}`);
+
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error updating user profile:', error);
+      throw error;
     }
   }
 }

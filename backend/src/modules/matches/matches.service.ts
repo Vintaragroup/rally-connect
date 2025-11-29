@@ -8,11 +8,12 @@ export class MatchesService {
   async getAllMatches() {
     return this.prisma.match.findMany({
       include: {
-        league: true,
-        team1: true,
-        players: true,
+        homeTeam: true,
+        awayTeam: true,
+        division: true,
+        season: true,
       },
-      orderBy: { scheduledAt: 'desc' },
+      orderBy: { startTime: 'desc' },
     });
   }
 
@@ -20,9 +21,10 @@ export class MatchesService {
     return this.prisma.match.findUnique({
       where: { id },
       include: {
-        league: true,
-        team1: true,
-        players: true,
+        homeTeam: true,
+        awayTeam: true,
+        division: true,
+        season: true,
       },
     });
   }

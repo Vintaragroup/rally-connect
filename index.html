@@ -9,6 +9,16 @@
 
     <body>
       <div id="root"></div>
+      <script type="module">
+        // OAuth Redirect Handler
+        // Intercept any OAuth callback and ensure we're handling it correctly
+        if (window.location.hash && window.location.hash.includes('access_token')) {
+          console.log('🔐 OAuth callback detected');
+          console.log('📍 Current URL:', window.location.href);
+          console.log('📍 Current Origin:', window.location.origin);
+          // Let Supabase handle the session via detectSessionInUrl
+        }
+      </script>
       <script type="module" src="/src/main.tsx"></script>
     </body>
   </html>

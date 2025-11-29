@@ -1,14 +1,20 @@
-import { Controller, Get, Post, Body, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Headers, BadRequestException, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+
+// TODO: Implement JWT Guard
+// import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   /**
-   * Get current user's auth status and onboarding status
-   * Uses Stack Auth user ID from request body
-   * TODO: Replace with JWT guard validation
+   * GET /auth/me
+   * Get current user's profile and onboarding status
+   * 
+   * @returns { onboardingCompleted: boolean, userId: string, email: string }
+   * 
+   * PRODUCTION: Add @UseGuards(JwtAuthGuard) when JWT guard is implemented
    */
   @Post('me')
   async getCurrentUser(@Body() body: { userId: string }) {
@@ -19,30 +25,65 @@ export class AuthController {
   }
 
   /**
-   * Sync user from Stack Auth to local database
-   */
-  @Post('sync-user')
-  async syncUser(@Body() body: { stackUserId: string; email: string; displayName: string }) {
-    if (!body.stackUserId || !body.email) {
-      throw new BadRequestException('stackUserId and email are required');
-    }
-    return this.authService.syncStackAuthUser(body.stackUserId, body.email, body.displayName || body.email);
-  }
-
-  /**
+   * POST /auth/complete-onboarding
    * Mark onboarding as complete for a user
-   * TODO: Replace with JWT guard validation
+   * 
+   * @param userId - Supabase user ID
+   * @returns { success: boolean, message: string }
+   * 
+   * PRODUCTION CHECKLIST:
+   * - [ ] Add @UseGuards(JwtAuthGuard) for authentication
+   * - [ ] Validate userId matches authenticated user
+   * - [ ] Store user sports selections
+   * - [ ] Store user role (player/captain)
+   * - [ ] Create corresponding Player or Captain record
+   * - [ ] Emit event for analytics tracking
+   * - [ ] Return 400 if user already completed onboarding
    */
   @Post('complete-onboarding')
-  async completeOnboarding(@Body() body: { userId: string }) {
+  async completeOnboarding(@Body() body: { 
+    userId: string;
+    sports?: string[];
+    role?: 'player' | 'captain';
+    teamId?: string;
+  }) {
     if (!body.userId) {
       throw new BadRequestException('userId is required');
     }
-    return this.authService.markOnboardingComplete(body.userId);
+    return this.authService.markOnboardingComplete(body.userId, body);
   }
 
   /**
-   * Confirm user email in Supabase
+   * POST /auth/sync-user
+   * Internal endpoint - sync Supabase user to local database
+   * 
+   * PRODUCTION: This should only be called by server-side functions or webhooks
+   */
+  @Post('sync-user')
+  async syncUser(@Body() body: { userId: string; email: string; fullName?: string }) {
+    if (!body.userId || !body.email) {
+      throw new BadRequestException('userId and email are required');
+    }
+    return this.authService.syncSupabaseUser(body.userId, body.email, body.fullName);
+  }
+
+  /**
+   * POST /auth/profile
+   * Get user profile by ID
+   */
+  @Post('profile')
+  async getUserProfile(@Body() body: { userId: string }) {
+    if (!body.userId) {
+      throw new BadRequestException('userId is required');
+    }
+    return this.authService.getUserProfile(body.userId);
+  }
+
+  /**
+   * POST /auth/confirm-email
+   * Internal endpoint - confirm user email after signup
+   * 
+   * PRODUCTION: Only accessible via server-side, protected by API key
    */
   @Post('confirm-email')
   async confirmEmail(@Body() body: { email: string }) {
@@ -50,5 +91,17 @@ export class AuthController {
       throw new BadRequestException('email is required');
     }
     return this.authService.confirmUserEmail(body.email);
+  }
+
+  /**
+   * POST /auth/find-by-email
+   * Find user by email address
+   */
+  @Post('find-by-email')
+  async findUserByEmail(@Body() body: { email: string }) {
+    if (!body.email) {
+      throw new BadRequestException('email is required');
+    }
+    return this.authService.findUserByEmail(body.email);
   }
 }

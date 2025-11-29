@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Mail, Chrome, Apple, ArrowLeft } from "lucide-react";
+import { Mail, Chrome, Apple, ArrowLeft, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { validateEmail, validatePassword, ValidationError } from "@/lib/validation/forms";
 
 interface RegisterScreenProps {
   isSignIn?: boolean;
@@ -19,6 +20,9 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
 
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
@@ -28,19 +32,35 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
     }
   }, [user, onComplete]);
 
+  // Update password strength indicator
+  useEffect(() => {
+    if (password) {
+      const result = validatePassword(password);
+      setPasswordStrength(result.strength);
+    }
+  }, [password]);
+
   const handleOAuthLogin = async (provider: string) => {
     try {
       setIsLoading(true);
       setError(null);
       
       console.log(`🔐 Initiating ${provider} OAuth login...`);
+      console.log(`📍 Current URL: ${window.location.href}`);
+      console.log(`📍 Origin: ${window.location.origin}`);
+      
+      // Get the Supabase redirect URL from environment or window location
+      // For mobile: use current origin (e.g., http://10.0.0.2:4300)
+      // For localhost: use localhost:3000
+      let redirectTo = window.location.origin;
+      
+      console.log(`🔗 Redirect URL being sent to OAuth: ${redirectTo}`);
       
       // Supabase OAuth with proper redirect configuration
-      // The redirect URI must match what's configured in Supabase dashboard
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider as 'google' | 'apple',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectTo,
           skipBrowserRedirect: false,
         },
       });
@@ -62,8 +82,23 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setIsLoading(true);
+      setValidationErrors([]);
       setError(null);
+
+      // Validate email
+      if (!validateEmail(email)) {
+        setValidationErrors([{ field: 'email', message: 'Please enter a valid email address' }]);
+        return;
+      }
+
+      // Validate password
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        setValidationErrors(passwordValidation.errors);
+        return;
+      }
+
+      setIsLoading(true);
 
       if (isSignIn) {
         // Sign in with email and password
@@ -81,6 +116,13 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
         // Pass true to indicate returning user
         onComplete(true);
       } else {
+        // Validate name for signup
+        if (!name.trim()) {
+          setValidationErrors([{ field: 'name', message: 'Please enter your name' }]);
+          setIsLoading(false);
+          return;
+        }
+
         // Sign up with email and password
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -145,8 +187,21 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
       <div className="flex-1 px-6 pb-6">
         {/* Error Message */}
         {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
-            {error}
+          <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg text-red-800 text-sm flex gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            {validationErrors.map((err, idx) => (
+              <div key={idx} className="flex gap-2 text-red-700 text-sm mb-1 last:mb-0">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{err.message}</span>
+              </div>
+            ))}
           </div>
         )}
 
@@ -191,8 +246,15 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
                 onChange={(e) => setName(e.target.value)}
                 required={!isSignIn}
                 disabled={isLoading}
-                className="h-12"
+                className={`h-12 ${validationErrors.some(e => e.field === 'name') ? 'border-red-500 focus:ring-red-500' : ''}`}
+                aria-invalid={validationErrors.some(e => e.field === 'name')}
               />
+              {validationErrors.find(e => e.field === 'name') && (
+                <p className="text-xs text-red-600 mt-1 flex gap-1">
+                  <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                  {validationErrors.find(e => e.field === 'name')?.message}
+                </p>
+              )}
             </div>
           )}
           <div>
@@ -204,21 +266,73 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={isLoading}
-              className="h-12"
+              className={`h-12 ${validationErrors.some(e => e.field === 'email') ? 'border-red-500 focus:ring-red-500' : ''}`}
+              aria-invalid={validationErrors.some(e => e.field === 'email')}
             />
+            {validationErrors.find(e => e.field === 'email') && (
+              <p className="text-xs text-red-600 mt-1 flex gap-1">
+                <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                {validationErrors.find(e => e.field === 'email')?.message}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm mb-2">Password</label>
-            <Input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-              className="h-12"
-              minLength={8}
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                className={`h-12 pr-10 ${validationErrors.some(e => e.field === 'password') ? 'border-red-500 focus:ring-red-500' : ''}`}
+                minLength={8}
+                aria-invalid={validationErrors.some(e => e.field === 'password')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {/* Password Strength Indicator */}
+            {password && !isSignIn && (
+              <div className="mt-2 space-y-1">
+                <div className="flex gap-1">
+                  {['weak', 'medium', 'strong'].map((level) => (
+                    <div
+                      key={level}
+                      className={`h-1 flex-1 rounded-full ${
+                        passwordStrength === level || 
+                        (level === 'weak') ||
+                        (level === 'medium' && (passwordStrength === 'medium' || passwordStrength === 'strong')) ||
+                        (level === 'strong' && passwordStrength === 'strong')
+                          ? 'bg-' + (level === 'weak' ? 'red' : level === 'medium' ? 'yellow' : 'green') + '-500'
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className={`text-xs ${
+                  passwordStrength === 'weak' ? 'text-red-600' :
+                  passwordStrength === 'medium' ? 'text-yellow-600' :
+                  'text-green-600'
+                }`}>
+                  Password strength: {passwordStrength}
+                </p>
+              </div>
+            )}
+            {validationErrors.find(e => e.field === 'password') && (
+              <p className="text-xs text-red-600 mt-1 flex gap-1">
+                <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                {validationErrors.find(e => e.field === 'password')?.message}
+              </p>
+            )}
           </div>
 
           {isSignIn && (

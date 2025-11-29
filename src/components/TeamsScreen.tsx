@@ -1,61 +1,69 @@
-import { useState } from "react";
-import { ChevronRight, Trophy, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronRight, Trophy, Users, MessageCircle } from "lucide-react";
 import { SportIcon } from "./SportIcon";
+import { apiService } from "../services/api";
 
 interface TeamsScreenProps {
   onViewTeam: () => void;
+  onOpenChat?: () => void;
   isCaptain?: boolean;
+  showChatIcon?: boolean;
 }
 
-export function TeamsScreen({ onViewTeam, isCaptain = false }: TeamsScreenProps) {
-  const [selectedSport, setSelectedSport] = useState<"all" | "bocce" | "pickleball" | "padel">("all");
+interface Team {
+  id: string;
+  name: string;
+  sport: "bocce" | "pickleball" | "padel";
+  division: string;
+  isYourTeam?: boolean;
+  standing: string;
+  record: string;
+  points: number;
+  players: Array<{ id: string; name: string }>;
+}
 
-  const teams = [
-    {
-      id: 1,
-      name: "Merion Bocce Club",
-      sport: "bocce" as const,
-      division: "Division 2",
-      record: "7–2",
-      standing: "2nd of 8",
-      points: 21,
-      players: ["AR", "JC", "SP", "RT"],
-      isYourTeam: true,
-    },
-    {
-      id: 2,
-      name: "Your Pickleball Squad",
-      sport: "pickleball" as const,
-      division: "Division 3",
-      record: "5–4",
-      standing: "4th of 10",
-      points: 15,
-      players: ["AR", "MB", "TK", "LC"],
-      isYourTeam: true,
-    },
-    {
-      id: 3,
-      name: "Aronimink Padel",
-      sport: "padel" as const,
-      division: "Division 1",
-      record: "8–1",
-      standing: "1st of 6",
-      points: 24,
-      players: ["AR", "DM", "KS", "NP"],
-      isYourTeam: true,
-    },
-    {
-      id: 4,
-      name: "Radnor Rollers",
-      sport: "bocce" as const,
-      division: "Division 2",
-      record: "6–3",
-      standing: "3rd of 8",
-      points: 18,
-      players: ["TM", "CW", "BL", "JK"],
-      isYourTeam: false,
-    },
-  ];
+export function TeamsScreen({ onViewTeam, onOpenChat, isCaptain = false, showChatIcon = true }: TeamsScreenProps) {
+  const [selectedSport, setSelectedSport] = useState<"all" | "bocce" | "pickleball" | "padel">("all");
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTeams = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getTeams();
+        if (response.data) {
+          // Transform API response to component format
+          const transformedTeams = (response.data as any[]).map((team) => ({
+            id: team.id,
+            name: team.name,
+            sport: (team.sport?.name || 'bocce').toLowerCase(),
+            division: team.division?.name || 'Unknown Division',
+            isYourTeam: false, // Will need to check current user
+            standing: `${team.ranking || '-'} place`,
+            record: `${team.wins || 0}-${team.losses || 0}`,
+            points: team.points || 0,
+            players: (team.members || []).slice(0, 5).map((m: any) => ({
+              id: m.id,
+              name: m.user?.name || 'Unknown',
+            })),
+          }));
+          setTeams(transformedTeams);
+          setError(null);
+        } else {
+          setError(response.error || 'Failed to fetch teams');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error fetching teams');
+        setTeams([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeams();
+  }, []);
 
   const sports = [
     { id: "all", label: "All Sports" },
@@ -68,11 +76,39 @@ export function TeamsScreen({ onViewTeam, isCaptain = false }: TeamsScreenProps)
     ? teams 
     : teams.filter(team => team.sport === selectedSport);
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-[var(--color-text-secondary)]">Loading teams...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Header */}
       <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] p-4 sticky top-0 z-10">
-        <h1 className="mb-4">Teams</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1>Teams</h1>
+          {showChatIcon && (
+            <button
+              onClick={onOpenChat}
+              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+              title="Team Chat"
+            >
+              <MessageCircle className="w-5 h-5 text-[var(--color-primary)]" />
+              <span className="text-[var(--color-text-primary)]">Chat</span>
+            </button>
+          )}
+        </div>
         
         {/* Sport Filters */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">

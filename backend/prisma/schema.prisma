@@ -27,8 +27,10 @@ model User {
   onboardingCompleted  Boolean  @default(false)
   
   // Relations
-  player    Player?
-  captain   Captain?
+  player               Player?
+  captain              Captain?
+  associationAdmin     AssociationAdmin? @relation("AssociationAdmins")
+  leagueAdmins         LeagueAdmin[] @relation("LeagueAdmins")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -38,6 +40,88 @@ enum UserRole {
   PLAYER
   CAPTAIN
   ADMIN
+}
+
+// ============================================================================
+// Association/Club Admin Management
+// ============================================================================
+
+model AssociationAdmin {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation("AssociationAdmins", fields: [userId], references: [id])
+  leagueId    String
+  league      League   @relation("LeagueAdmins", fields: [leagueId], references: [id])
+  
+  role        String   @default("admin") // "admin", "manager", "moderator"
+  permissions String[] @default(["manage_teams", "manage_players", "manage_captains", "set_rules"])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, leagueId])
+}
+
+// Scoped league admin for future expansion
+model LeagueAdmin {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("LeagueAdmins", fields: [userId], references: [id])
+  leagueId  String
+  league    League   @relation("ScopedLeagueAdmins", fields: [leagueId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, leagueId])
+}
+
+model CaptainRequest {
+  id              String                 @id @default(cuid())
+  playerId        String
+  player          Player                 @relation("CaptainRequests", fields: [playerId], references: [id])
+  teamId          String
+  team            Team                   @relation("CaptainRequests", fields: [teamId], references: [id])
+  leagueId        String
+  league          League                 @relation("CaptainRequests", fields: [leagueId], references: [id])
+  
+  source          CaptainRequestSource   @default(PLAYER) // PLAYER request or ADMIN invite
+  status          CaptainRequestStatus   @default(PENDING)
+  
+  requestMessage  String?
+  approvedAt      DateTime?
+  approvedByAdminId String?
+  rejectionReason String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum CaptainRequestSource {
+  PLAYER
+  ADMIN
+}
+
+enum CaptainRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LeagueRules {
+  id              String   @id @default(cuid())
+  leagueId        String   @unique
+  league          League   @relation("LeagueRules", fields: [leagueId], references: [id])
+  
+  teamNamePattern String?   // e.g., "colleges", "cities", "colors" - for theme validation
+  teamNameRequired Boolean  @default(false)
+  maxPlayersPerTeam Int?
+  minPlayersPerTeam Int?
+  allowCaptainTransfer Boolean @default(false)
+  requireCaptainApproval Boolean @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 // ============================================================================
@@ -68,9 +152,13 @@ model League {
   sport       Sport    @relation(fields: [sportId], references: [id])
   
   // Relations
-  divisions Division[]
-  teams     Team[]
-  matches   Match[]
+  seasons     Season[]
+  teams       Team[]
+  matches     Match[]
+  admins      AssociationAdmin[] @relation("LeagueAdmins")
+  scopedAdmins LeagueAdmin[] @relation("ScopedLeagueAdmins")
+  captainRequests CaptainRequest[] @relation("CaptainRequests")
+  rules       LeagueRules? @relation("LeagueRules")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,20 +166,37 @@ model League {
   @@unique([name, sportId])
 }
 
+model Season {
+  id          String      @id @default(cuid())
+  league      League      @relation(fields: [leagueId], references: [id])
+  leagueId    String
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  divisions   Division[]
+  matches     Match[]
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@unique([leagueId, name])
+}
+
 model Division {
   id       String @id @default(cuid())
   name     String // "Premier", "Intermediate", "Beginner", etc.
-  leagueId String
-  league   League @relation(fields: [leagueId], references: [id])
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id])
   
   // Relations
   teams     Team[]
   standings Standing[]
+  matches   Match[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@unique([name, leagueId])
+  @@unique([name, seasonId])
 }
 
 model Club {
@@ -131,14 +236,15 @@ model Team {
   losses      Int      @default(0)
   
   // Relations
-  captain     Captain  @relation("TeamCaptain", fields: [captainId], references: [id])
-  captainId   String   @unique
-  players     Player[] @relation("TeamPlayers")
-  matches     Match[]  @relation("TeamMatches")
+  captains    TeamCaptain[]         // Multiple captains per team
+  players     TeamPlayer[]
+  homeMatches Match[]  @relation("HomeTeamMatches")
+  awayMatches Match[]  @relation("AwayTeamMatches")
   standings   Standing[]
   members     TeamMember[] @relation("TeamMembers")
   invitations TeamInvitation[]
   chatMessages ChatMessage[]
+  captainRequests CaptainRequest[] @relation("CaptainRequests")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -150,10 +256,25 @@ model Captain {
   user   User   @relation(fields: [userId], references: [id])
   
   // Relations
-  team Team? @relation("TeamCaptain")
+  teams TeamCaptain[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TeamCaptain {
+  id        String   @id @default(cuid())
+  team      Team     @relation(fields: [teamId], references: [id])
+  teamId    String
+  player    Player   @relation(fields: [playerId], references: [id])
+  playerId  String
+  captain   Captain? @relation(fields: [captainId], references: [id])
+  captainId String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([teamId, playerId])
 }
 
 model Player {
@@ -168,14 +289,16 @@ model Player {
   losses  Int    @default(0)
   
   // Relations
-  teams       Team[]          @relation("TeamPlayers")
-  matches     Match[]         @relation("PlayerMatches")
-  availability Availability[]
+  teamPlayers   TeamPlayer[]
+  teamCaptains  TeamCaptain[]
+  matches       Match[]         @relation("PlayerMatches")
+  availability  Availability[]
   matchAvailability MatchAvailability[]
   lineupAssignments LineupAssignment[]
   playerRatings PlayerRating[]
-  stats       PlayerStats?
+  stats         PlayerStats?
   waitlistEntries WaitlistEntry[]
+  captainRequests CaptainRequest[] @relation("CaptainRequests")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -204,35 +327,43 @@ model PlayerStats {
 // ============================================================================
 
 model Match {
-  id        String      @id @default(cuid())
-  leagueId  String
-  league    League      @relation(fields: [leagueId], references: [id])
+  id          String      @id @default(cuid())
+  seasonId    String
+  season      Season      @relation(fields: [seasonId], references: [id])
+  divisionId  String?
+  division    Division?   @relation(fields: [divisionId], references: [id])
+  leagueId    String
+  league      League      @relation(fields: [leagueId], references: [id])
   
-  // Teams
-  team1Id   String
-  team1     Team        @relation("TeamMatches", fields: [team1Id], references: [id])
-  team2Id   String
+  // Home & Away teams
+  homeTeamId  String
+  homeTeam    Team        @relation("HomeTeamMatches", fields: [homeTeamId], references: [id])
+  awayTeamId  String
+  awayTeam    Team        @relation("AwayTeamMatches", fields: [awayTeamId], references: [id])
   
   // Score
-  team1Score Int?
-  team2Score Int?
-  status    MatchStatus @default(SCHEDULED)
+  homeScore   Int?
+  awayScore   Int?
+  status      MatchStatus @default(SCHEDULED)
   
   // Details
-  scheduledAt DateTime
+  startTime   DateTime
   courtName   String?
   
   // Relations
-  players     Player[]    @relation("PlayerMatches")
-  lineups     Lineup[]
-  availability MatchAvailability[]
-  ratings     RatingHistory[]
-  waitlist    WaitlistEntry[]
+  players       Player[]    @relation("PlayerMatches")
+  lineups       Lineup[]
+  matchLines    MatchLine[]
+  availability  MatchAvailability[]
+  ratings       RatingHistory[]
+  waitlist      WaitlistEntry[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  @@index([leagueId, scheduledAt])
+  @@index([seasonId, startTime])
+  @@index([homeTeamId, startTime])
+  @@index([awayTeamId, startTime])
 }
 
 enum MatchStatus {
@@ -240,6 +371,26 @@ enum MatchStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+model MatchLine {
+  id          String   @id @default(cuid())
+  match       Match    @relation(fields: [matchId], references: [id])
+  matchId     String
+  lineNumber  Int
+  homeGames   Int      @default(0)
+  awayGames   Int      @default(0)
+  homePoints  Int      @default(0)
+  awayPoints  Int      @default(0)
+  winner      LineWinner?
+  
+  @@unique([matchId, lineNumber])
+}
+
+enum LineWinner {
+  HOME
+  AWAY
+  TIE
 }
 
 model Standing {
@@ -284,6 +435,26 @@ model Availability {
 // ============================================================================
 // Team Management (Enhanced)
 // ============================================================================
+
+model TeamPlayer {
+  id        String            @id @default(cuid())
+  team      Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId    String
+  player    Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId  String
+  status    TeamMemberStatus  @default(ACTIVE)
+  joinedAt  DateTime          @default(now())
+  
+  @@unique([teamId, playerId])
+  @@map("TeamPlayer")
+}
+
+enum TeamMemberStatus {
+  ACTIVE
+  INACTIVE
+  LEFT
+  BANNED_FROM_TEAM
+}
 
 model TeamMember {
   id        String   @id @default(cuid())
@@ -350,17 +521,27 @@ model LineupAssignment {
 // ============================================================================
 
 model MatchAvailability {
-  id        String   @id @default(cuid())
+  id        String              @id @default(cuid())
   matchId   String
   playerId  String
-  status    String   @default("no_response") // available, maybe, unavailable, no_response
+  status    AvailabilityStatus  @default(NO_RESPONSE)
   notes     String?
   
-  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  match     Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player    Player              @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   
   @@unique([matchId, playerId])
   @@map("MatchAvailability")
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  MAYBE
+  UNAVAILABLE
+  NO_RESPONSE
 }
 
 // ============================================================================

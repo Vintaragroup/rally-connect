@@ -9,6 +9,7 @@ import { PlayersModule } from './modules/players/players.module';
 import { MatchesModule } from './modules/matches/matches.module';
 import { StandingsModule } from './modules/standings/standings.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AssociationAdminModule } from './modules/association-admin/association-admin.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AuthModule } from './modules/auth/auth.module';
     MatchesModule,
     StandingsModule,
     AuthModule,
+    AssociationAdminModule,
   ],
 })
 export class AppModule {}

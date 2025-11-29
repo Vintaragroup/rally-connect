@@ -19,44 +19,7 @@ interface WaitlistEntry {
 }
 
 export function WaitlistScreen({ onBack, isCaptain = false }: WaitlistScreenProps) {
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([
-    {
-      id: "w1",
-      playerName: "Taylor Martinez",
-      initials: "TM",
-      rating: 4.1,
-      position: 1,
-      joinedAt: "2 hours ago",
-      preferredPosition: "Doubles",
-    },
-    {
-      id: "w2",
-      playerName: "Jordan Lee",
-      initials: "JL",
-      rating: 3.9,
-      position: 2,
-      joinedAt: "3 hours ago",
-      preferredPosition: "Singles",
-    },
-    {
-      id: "w3",
-      playerName: "Casey Wong",
-      initials: "CW",
-      rating: 4.3,
-      position: 3,
-      joinedAt: "5 hours ago",
-      preferredPosition: "Doubles",
-    },
-    {
-      id: "w4",
-      playerName: "Morgan Blake",
-      initials: "MB",
-      rating: 3.7,
-      position: 4,
-      joinedAt: "1 day ago",
-      preferredPosition: "Singles",
-    },
-  ]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
 
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
 

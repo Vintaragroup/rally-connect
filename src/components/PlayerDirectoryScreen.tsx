@@ -2,9 +2,10 @@ import { Search, Filter, Mail, Trophy, TrendingUp, Users, MapPin, Star } from "l
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { toast } from "sonner@2.0.3";
+import { apiService } from "../services/api";
 
 interface PlayerDirectoryScreenProps {
   onBack: () => void;
@@ -29,121 +30,45 @@ export function PlayerDirectoryScreen({ onBack }: PlayerDirectoryScreenProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSport, setSelectedSport] = useState<"all" | "bocce" | "pickleball" | "padel">("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const players: Player[] = [
-    {
-      id: "p1",
-      name: "Alex Rivera",
-      initials: "AR",
-      rating: 1450,
-      sport: "bocce",
-      team: "Merion Bocce Club",
-      location: "Merion, PA",
-      wins: 14,
-      losses: 6,
-      winRate: 70,
-      isAvailable: true,
-      isCaptain: true,
-    },
-    {
-      id: "p2",
-      name: "Jordan Chen",
-      initials: "JC",
-      rating: 1520,
-      sport: "bocce",
-      team: "Radnor Rollers",
-      location: "Radnor, PA",
-      wins: 16,
-      losses: 4,
-      winRate: 80,
-      isAvailable: true,
-      isCaptain: false,
-    },
-    {
-      id: "p3",
-      name: "Sam Martinez",
-      initials: "SM",
-      rating: 1380,
-      sport: "pickleball",
-      team: "Your Pickleball Squad",
-      location: "Wayne, PA",
-      wins: 12,
-      losses: 8,
-      winRate: 60,
-      isAvailable: false,
-      isCaptain: true,
-    },
-    {
-      id: "p4",
-      name: "Taylor Kim",
-      initials: "TK",
-      rating: 1490,
-      sport: "pickleball",
-      team: "Haverford Picklers",
-      location: "Haverford, PA",
-      wins: 15,
-      losses: 5,
-      winRate: 75,
-      isAvailable: true,
-      isCaptain: false,
-    },
-    {
-      id: "p5",
-      name: "Morgan Lee",
-      initials: "ML",
-      rating: 1410,
-      sport: "padel",
-      team: "Aronimink Padel",
-      location: "Newtown Square, PA",
-      wins: 13,
-      losses: 7,
-      winRate: 65,
-      isAvailable: true,
-      isCaptain: false,
-    },
-    {
-      id: "p6",
-      name: "Casey Johnson",
-      initials: "CJ",
-      rating: 1560,
-      sport: "bocce",
-      team: "Wayne Warriors",
-      location: "Wayne, PA",
-      wins: 18,
-      losses: 2,
-      winRate: 90,
-      isAvailable: false,
-      isCaptain: true,
-    },
-    {
-      id: "p7",
-      name: "Riley Patel",
-      initials: "RP",
-      rating: 1330,
-      sport: "bocce",
-      team: "Devon Dynamos",
-      location: "Devon, PA",
-      wins: 10,
-      losses: 10,
-      winRate: 50,
-      isAvailable: true,
-      isCaptain: false,
-    },
-    {
-      id: "p8",
-      name: "Jamie Wilson",
-      initials: "JW",
-      rating: 1470,
-      sport: "padel",
-      team: "Philadelphia Padel Club",
-      location: "Philadelphia, PA",
-      wins: 14,
-      losses: 6,
-      winRate: 70,
-      isAvailable: true,
-      isCaptain: false,
-    },
-  ];
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getPlayers();
+        if (response.data) {
+          // Transform API response to component format
+          const transformedPlayers = (response.data as any[]).map((player) => ({
+            id: player.id,
+            name: player.user?.name || 'Unknown',
+            initials: (player.user?.name || 'U').split(' ').map((n: string) => n[0]).join('').toUpperCase(),
+            rating: player.rating || 0,
+            sport: (player.primarySport?.name || 'bocce').toLowerCase(),
+            team: player.teams?.[0]?.name || 'Unassigned',
+            location: 'TBD',
+            wins: player.wins || 0,
+            losses: player.losses || 0,
+            winRate: (player.wins || 0) + (player.losses || 0) > 0 ? ((player.wins || 0) / ((player.wins || 0) + (player.losses || 0)) * 100) : 0,
+            isAvailable: true,
+            isCaptain: player.role === 'CAPTAIN',
+          }));
+          setPlayers(transformedPlayers);
+          setError(null);
+        } else {
+          setError(response.error || 'Failed to fetch players');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error fetching players');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlayers();
+  }, []);
 
   const filteredPlayers = players.filter(player => {
     const matchesSearch = player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -153,6 +78,22 @@ export function PlayerDirectoryScreen({ onBack }: PlayerDirectoryScreenProps) {
   });
 
   const sortedPlayers = [...filteredPlayers].sort((a, b) => b.rating - a.rating);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-[var(--color-text-secondary)]">Loading players...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

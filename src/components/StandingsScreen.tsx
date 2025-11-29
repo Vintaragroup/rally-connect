@@ -1,7 +1,8 @@
 import { Trophy, TrendingUp, TrendingDown, Minus, ChevronRight } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { SportIcon } from "./SportIcon";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiService } from "../services/api";
 
 interface StandingsScreenProps {
   onBack: () => void;
@@ -22,107 +23,46 @@ interface TeamStanding {
 }
 
 export function StandingsScreen({ onBack, onViewTeam }: StandingsScreenProps) {
-  const [selectedDivision, setSelectedDivision] = useState("div-3");
+  const [selectedDivision, setSelectedDivision] = useState("div-1");
   const [selectedSport, setSelectedSport] = useState<"all" | "bocce" | "pickleball" | "padel">("all");
+  const [standings, setStandings] = useState<TeamStanding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [divisions, setDivisions] = useState<Array<{ id: string; name: string }>>([]);
 
-  const standings: TeamStanding[] = [
-    {
-      rank: 1,
-      prevRank: 1,
-      team: "Aronimink Aces",
-      sport: "bocce",
-      played: 16,
-      wins: 14,
-      losses: 2,
-      winRate: 87.5,
-      points: 42,
-      streak: "W5",
-    },
-    {
-      rank: 2,
-      prevRank: 3,
-      team: "Merion Bocce Club",
-      sport: "bocce",
-      played: 16,
-      wins: 12,
-      losses: 4,
-      winRate: 75.0,
-      points: 36,
-      streak: "W3",
-    },
-    {
-      rank: 3,
-      prevRank: 2,
-      team: "Radnor Rollers",
-      sport: "bocce",
-      played: 16,
-      wins: 11,
-      losses: 5,
-      winRate: 68.8,
-      points: 33,
-      streak: "L1",
-    },
-    {
-      rank: 4,
-      prevRank: 4,
-      team: "Wayne Warriors",
-      sport: "bocce",
-      played: 16,
-      wins: 9,
-      losses: 7,
-      winRate: 56.3,
-      points: 27,
-      streak: "W1",
-    },
-    {
-      rank: 5,
-      prevRank: 6,
-      team: "Haverford Hawks",
-      sport: "bocce",
-      played: 16,
-      wins: 7,
-      losses: 9,
-      winRate: 43.8,
-      points: 21,
-      streak: "W2",
-    },
-    {
-      rank: 6,
-      prevRank: 5,
-      team: "Devon Dynamos",
-      sport: "bocce",
-      played: 16,
-      wins: 5,
-      losses: 11,
-      winRate: 31.3,
-      points: 15,
-      streak: "L3",
-    },
-    {
-      rank: 7,
-      prevRank: 7,
-      team: "Bryn Mawr Blasters",
-      sport: "bocce",
-      played: 16,
-      wins: 4,
-      losses: 12,
-      winRate: 25.0,
-      points: 12,
-      streak: "L2",
-    },
-    {
-      rank: 8,
-      prevRank: 8,
-      team: "Gladwyne Giants",
-      sport: "bocce",
-      played: 16,
-      wins: 2,
-      losses: 14,
-      winRate: 12.5,
-      points: 6,
-      streak: "L6",
-    },
-  ];
+  useEffect(() => {
+    const fetchStandings = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getStandings();
+        if (response.data) {
+          // Transform API response to component format
+          const transformedStandings = (response.data as any[]).map((standing, index) => ({
+            rank: index + 1,
+            prevRank: index + 1,
+            team: standing.team?.name || 'Unknown',
+            sport: (standing.sport?.name || 'bocce').toLowerCase(),
+            played: standing.gamesPlayed || 0,
+            wins: standing.wins || 0,
+            losses: standing.losses || 0,
+            winRate: standing.gamesPlayed ? (standing.wins / standing.gamesPlayed * 100) : 0,
+            points: standing.points || 0,
+            streak: `${standing.wins > standing.losses ? 'W' : 'L'}${Math.abs(standing.wins - standing.losses)}`,
+          }));
+          setStandings(transformedStandings);
+          setError(null);
+        } else {
+          setError(response.error || 'Failed to fetch standings');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error fetching standings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStandings();
+  }, []);
 
   const getRankChange = (rank: number, prevRank: number) => {
     if (rank < prevRank) {
@@ -155,66 +95,63 @@ export function StandingsScreen({ onBack, onViewTeam }: StandingsScreenProps) {
           <div>
             <h1 className="mb-1">Standings</h1>
             <p className="text-sm text-[var(--color-text-secondary)]">
-              Winter 2024–25 Season
+              Current Season
             </p>
           </div>
           <Trophy className="w-6 h-6 text-[var(--color-accent)]" />
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <select
-            value={selectedDivision}
-            onChange={(e) => setSelectedDivision(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-sm bg-white"
-          >
-            <option value="div-1">Division 1</option>
-            <option value="div-2">Division 2</option>
-            <option value="div-3">Division 3</option>
-            <option value="div-4">Division 4</option>
-          </select>
-
-          <button
-            onClick={() => setSelectedSport("all")}
-            className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-              selectedSport === "all"
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-gray-100 text-[var(--color-text-secondary)]"
-            }`}
-          >
-            All Sports
-          </button>
-          <button
-            onClick={() => setSelectedSport("bocce")}
-            className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-              selectedSport === "bocce"
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-gray-100 text-[var(--color-text-secondary)]"
-            }`}
-          >
-            Bocce
-          </button>
-          <button
-            onClick={() => setSelectedSport("pickleball")}
-            className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-              selectedSport === "pickleball"
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-gray-100 text-[var(--color-text-secondary)]"
-            }`}
-          >
-            Pickleball
-          </button>
-          <button
-            onClick={() => setSelectedSport("padel")}
-            className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-              selectedSport === "padel"
-                ? "bg-[var(--color-primary)] text-white"
-                : "bg-gray-100 text-[var(--color-text-secondary)]"
-            }`}
-          >
-            Padel
-          </button>
-        </div>
+        {loading ? (
+          <p className="text-sm text-[var(--color-text-secondary)]">Loading standings...</p>
+        ) : error ? (
+          <p className="text-sm text-red-500">Error: {error}</p>
+        ) : (
+          <>
+            {/* Filters */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <button
+                onClick={() => setSelectedSport("all")}
+                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  selectedSport === "all"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-gray-100 text-[var(--color-text-secondary)]"
+                }`}
+              >
+                All Sports
+              </button>
+              <button
+                onClick={() => setSelectedSport("bocce")}
+                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  selectedSport === "bocce"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-gray-100 text-[var(--color-text-secondary)]"
+                }`}
+              >
+                Bocce
+              </button>
+              <button
+                onClick={() => setSelectedSport("pickleball")}
+                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  selectedSport === "pickleball"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-gray-100 text-[var(--color-text-secondary)]"
+                }`}
+              >
+                Pickleball
+              </button>
+              <button
+                onClick={() => setSelectedSport("padel")}
+                className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  selectedSport === "padel"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-gray-100 text-[var(--color-text-secondary)]"
+                }`}
+              >
+                Padel
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="p-4 space-y-4">

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { BarChart3, TrendingUp, Users, Calendar, Filter, Download } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BarChart3, TrendingUp, Users, Calendar, Filter, Download, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import {
@@ -17,6 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { EmptyState } from "./EmptyState";
 
 interface AnalyticsDashboardProps {
   onBack: () => void;
@@ -25,40 +26,58 @@ interface AnalyticsDashboardProps {
 export function AnalyticsDashboard({ onBack }: AnalyticsDashboardProps) {
   const [selectedSport, setSelectedSport] = useState<"all" | "bocce" | "pickleball" | "padel">("all");
   const [selectedSeason, setSelectedSeason] = useState("winter-24-25");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for charts
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setIsLoading(true);
+        // TODO: Replace with actual API call
+        // const response = await fetch(`/api/analytics?sport=${selectedSport}&season=${selectedSeason}`);
+        // const data = await response.json();
+        
+        console.log(`⚠️ Analytics API not yet integrated. Sport: ${selectedSport}, Season: ${selectedSeason}`);
+        setError("Analytics data not available yet. Backend integration needed.");
+      } catch (err) {
+        console.error("Failed to fetch analytics:", err);
+        setError("Unable to load analytics data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [selectedSport, selectedSeason]);
+
+  // Placeholder data for chart rendering (will be replaced with API data)
   const courtUtilizationData = [
-    { club: "Merion", utilization: 87 },
-    { club: "Radnor", utilization: 72 },
-    { club: "Aronimink", utilization: 91 },
-    { club: "Wayne", utilization: 65 },
-    { club: "Haverford", utilization: 78 },
+    { name: "Court 1", utilization: 85 },
+    { name: "Court 2", utilization: 92 },
+    { name: "Court 3", utilization: 71 },
+    { name: "Court 4", utilization: 88 },
   ];
 
   const participationTrendData = [
-    { week: "Week 1", players: 45 },
-    { week: "Week 2", players: 52 },
-    { week: "Week 3", players: 48 },
-    { week: "Week 4", players: 61 },
-    { week: "Week 5", players: 58 },
-    { week: "Week 6", players: 67 },
-    { week: "Week 7", players: 72 },
-    { week: "Week 8", players: 69 },
+    { week: "Week 1", matches: 12, players: 45 },
+    { week: "Week 2", matches: 15, players: 52 },
+    { week: "Week 3", matches: 18, players: 61 },
+    { week: "Week 4", matches: 16, players: 58 },
   ];
 
   const ratingDistributionData = [
-    { name: "1.0-2.0", value: 8 },
-    { name: "2.0-3.0", value: 23 },
-    { name: "3.0-4.0", value: 42 },
-    { name: "4.0-5.0", value: 27 },
+    { name: "0-999", value: 24 },
+    { name: "1000-1199", value: 35 },
+    { name: "1200-1399", value: 28 },
+    { name: "1400+", value: 13 },
   ];
 
   const forfeitsByTimeData = [
-    { time: "5 PM", forfeits: 2 },
-    { time: "6 PM", forfeits: 1 },
-    { time: "7 PM", forfeits: 4 },
-    { time: "8 PM", forfeits: 7 },
-    { time: "9 PM", forfeits: 5 },
+    { hour: "9-11am", forfeits: 2 },
+    { hour: "11-1pm", forfeits: 0 },
+    { hour: "1-3pm", forfeits: 1 },
+    { hour: "3-5pm", forfeits: 0 },
+    { hour: "5-7pm", forfeits: 3 },
   ];
 
   const COLORS = ["#0ea5e9", "#a3e635", "#f59e0b", "#ef4444"];
@@ -69,6 +88,47 @@ export function AnalyticsDashboard({ onBack }: AnalyticsDashboardProps) {
     { label: "Court Utilization", value: "79%", change: "+5%", trend: "up" },
     { label: "Avg Match Duration", value: "78 min", change: "-3%", trend: "down" },
   ];
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] flex flex-col">
+        <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] p-4 sticky top-0 z-20">
+          <button onClick={onBack} className="text-[var(--color-text-secondary)] mb-4">
+            ← Back
+          </button>
+          <h1>Analytics Dashboard</h1>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <EmptyState 
+            icon={AlertCircle}
+            title="Analytics Unavailable"
+            description={error}
+            actionLabel="Go Back"
+            onAction={onBack}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] flex flex-col">
+        <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] p-4 sticky top-0 z-20">
+          <button onClick={onBack} className="text-[var(--color-text-secondary)] mb-4">
+            ← Back
+          </button>
+          <h1>Analytics Dashboard</h1>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-full border-4 border-[var(--color-bg-elevated)] border-t-[var(--color-primary)] animate-spin mx-auto mb-4" />
+            <p className="text-[var(--color-text-secondary)]">Loading analytics...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

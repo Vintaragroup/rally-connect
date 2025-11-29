@@ -1,14 +1,21 @@
-import { Send, Image, Smile, MoreVertical, Pin, Users, Info } from "lucide-react";
-import { Button } from "./ui/button";
+import { Send, Image, Smile, Users, Info, ChevronRight } from "lucide-react";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 interface TeamChatScreenProps {
   onBack: () => void;
   teamName?: string;
+}
+
+interface TeamMember {
+  id: string;
+  name: string;
+  initials: string;
+  role?: "captain" | "player";
+  isOnline?: boolean;
 }
 
 interface Message {
@@ -25,74 +32,70 @@ interface Message {
 
 export function TeamChatScreen({ onBack, teamName = "Merion Bocce Club" }: TeamChatScreenProps) {
   const [messageText, setMessageText] = useState("");
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  
+  // Team members
+  const teamMembers: TeamMember[] = [
+    { id: "1", name: "Sarah Chen", initials: "SC", role: "captain", isOnline: true },
+    { id: "2", name: "Mike Johnson", initials: "MJ", role: "player", isOnline: true },
+    { id: "3", name: "Alex Rodriguez", initials: "AR", role: "player", isOnline: false },
+    { id: "4", name: "Emma Walsh", initials: "EW", role: "player", isOnline: true },
+    { id: "5", name: "James Wilson", initials: "JW", role: "player", isOnline: true },
+    { id: "6", name: "Lisa Park", initials: "LP", role: "player", isOnline: false },
+    { id: "7", name: "David Chen", initials: "DC", role: "player", isOnline: true },
+    { id: "8", name: "Maria Garcia", initials: "MG", role: "player", isOnline: true },
+    { id: "9", name: "Tom Anderson", initials: "TA", role: "player", isOnline: false },
+    { id: "10", name: "Sophie Brown", initials: "SB", role: "player", isOnline: true },
+    { id: "11", name: "Kevin Lee", initials: "KL", role: "player", isOnline: true },
+    { id: "12", name: "Rachel Davis", initials: "RD", role: "player", isOnline: false },
+  ];
+
+  // Other team captains for inter-team messaging
+  const otherTeamCaptains: TeamMember[] = [
+    { id: "captain-oak", name: "James Rodriguez", initials: "JR", role: "captain", isOnline: true },
+    { id: "captain-oak-2", name: "Lisa Thompson", initials: "LT", role: "captain", isOnline: true },
+    { id: "captain-cedar", name: "Marcus Johnson", initials: "MJ", role: "captain", isOnline: false },
+    { id: "captain-cedar-2", name: "Emma Davis", initials: "ED", role: "captain", isOnline: true },
+  ];
+
+  // Messages for team chat
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "m1",
-      sender: "Jordan Chen",
-      senderInitials: "JC",
-      content: "Great win last night team! Everyone played amazing 🏆",
-      timestamp: "2 hours ago",
+      sender: "Sarah Chen",
+      senderInitials: "SC",
+      content: "Hey team! Who's ready for the match on Saturday?",
+      timestamp: "2:45 PM",
       isMe: false,
       isCaptain: true,
-      isPinned: true,
-      reactions: [
-        { emoji: "🔥", count: 5, hasReacted: true },
-        { emoji: "👏", count: 3, hasReacted: false },
-      ],
+      reactions: [{ emoji: "👍", count: 3, hasReacted: false }],
     },
     {
       id: "m2",
-      sender: "Sam Martinez",
-      senderInitials: "SM",
-      content: "Thanks! That last point was intense",
-      timestamp: "2 hours ago",
-      isMe: false,
+      sender: "You",
+      senderInitials: "AR",
+      content: "Count me in! Can't wait 🎾",
+      timestamp: "2:47 PM",
+      isMe: true,
+      reactions: [{ emoji: "🔥", count: 1, hasReacted: true }],
     },
     {
       id: "m3",
-      sender: "You",
-      senderInitials: "AR",
-      content: "Team effort all the way! Can't wait for next week",
-      timestamp: "1 hour ago",
-      isMe: true,
-    },
-    {
-      id: "m4",
-      sender: "Taylor Kim",
-      senderInitials: "TK",
-      content: "Quick reminder: Practice on Thursday at 6pm!",
-      timestamp: "30 min ago",
+      sender: "Mike Johnson",
+      senderInitials: "MJ",
+      content: "What time should we meet at the venue?",
+      timestamp: "2:50 PM",
       isMe: false,
-      isCaptain: true,
-    },
-    {
-      id: "m5",
-      sender: "Morgan Lee",
-      senderInitials: "ML",
-      content: "I'll be there 👍",
-      timestamp: "25 min ago",
-      isMe: false,
-    },
-    {
-      id: "m6",
-      sender: "Casey Johnson",
-      senderInitials: "CJ",
-      content: "Should we bring our own equipment or is it provided?",
-      timestamp: "20 min ago",
-      isMe: false,
-    },
-    {
-      id: "m7",
-      sender: "Jordan Chen",
-      senderInitials: "JC",
-      content: "Equipment is provided! Just bring water and your A-game 💪",
-      timestamp: "15 min ago",
-      isMe: false,
-      isCaptain: true,
-      reactions: [{ emoji: "👍", count: 4, hasReacted: false }],
+      reactions: [{ emoji: "❓", count: 1, hasReacted: false }],
     },
   ]);
 
+  // Get current conversation details
+  const isTeamChat = activeConversationId === "team-chat" || activeConversationId === null;
+  const currentMember = activeConversationId && activeConversationId !== "team-chat" 
+    ? teamMembers.find(m => m.id === activeConversationId) || otherTeamCaptains.find(c => c.id === activeConversationId)
+    : null;
+  
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
 
@@ -110,192 +113,260 @@ export function TeamChatScreen({ onBack, teamName = "Merion Bocce Club" }: TeamC
     toast.success("Message sent!");
   };
 
-  const handleReaction = (messageId: string, emoji: string) => {
+  const handleReaction = (_messageId: string, emoji: string) => {
     toast.success(`Reacted with ${emoji}`);
   };
 
-  const pinnedMessages = messages.filter(m => m.isPinned);
+  const handleStartDM = (member: TeamMember) => {
+    setActiveConversationId(member.id);
+  };
+
+  const handleBackToList = () => {
+    setActiveConversationId(null);
+  };
+
   const regularMessages = messages.filter(m => !m.isPinned);
 
-  return (
-    <div className="flex flex-col h-screen bg-[var(--color-bg)] w-full">
-      <div className="app-container mx-auto flex flex-col h-screen max-h-screen">
+  // CHAT LIST VIEW
+  if (activeConversationId === null) {
+    return (
+      <div className="h-full flex flex-col bg-[var(--color-bg)]">
         {/* Header */}
-        <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] p-3 sm:p-4">
+        <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] p-4 flex-shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <button onClick={onBack} className="text-[var(--color-text-secondary)]">
               ← Back
             </button>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="font-medium">{teamName}</h2>
-                <p className="text-xs text-[var(--color-text-secondary)]">
-                  12 members • 8 online
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => toast.info("Team info coming soon!")}
-              className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center"
-            >
-              <Info className="w-5 h-5 text-[var(--color-text-secondary)]" />
-            </button>
-          </div>
+          <h1 className="text-lg font-semibold">Messages</h1>
         </div>
 
-        {/* Pinned Messages */}
-        {pinnedMessages.length > 0 && (
-          <div className="bg-amber-50 border-b border-amber-200 p-3">
-            <div className="flex items-start gap-2">
-              <Pin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Team Chat - Always at top */}
+          <button
+            onClick={() => setActiveConversationId("team-chat")}
+            className="w-full px-4 py-4 flex items-center gap-3 border-b border-[var(--color-border)] hover:bg-gray-50 transition-colors text-left"
+          >
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center flex-shrink-0">
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm">{teamName}</p>
+              <p className="text-xs text-[var(--color-text-secondary)]">12 members • 8 online</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[var(--color-text-tertiary)] flex-shrink-0" />
+          </button>
+
+          {/* Divider */}
+          <div className="px-4 py-2">
+            <p className="text-xs font-medium text-[var(--color-text-tertiary)] uppercase">Direct Messages</p>
+          </div>
+
+          {/* Team Members */}
+          {teamMembers.map((member) => (
+            <button
+              key={member.id}
+              onClick={() => handleStartDM(member)}
+              className="w-full px-4 py-3 flex items-center gap-3 border-b border-[var(--color-border)] hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                  {member.initials}
+                </div>
+                {member.isOnline && (
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                )}
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-amber-900 mb-1">Pinned Message</p>
-                <p className="text-sm text-amber-800 truncate">
-                  {pinnedMessages[0].content}
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm">{member.name}</p>
+                  {member.role === "captain" && (
+                    <Badge className="bg-amber-100 text-amber-700 text-xs">Captain</Badge>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {member.isOnline ? "Online" : "Offline"}
                 </p>
               </div>
+              <ChevronRight className="w-4 h-4 text-[var(--color-text-tertiary)] flex-shrink-0" />
+            </button>
+          ))}
+
+          {/* Team Captains Divider */}
+          <div className="px-4 py-2 mt-2">
+            <p className="text-xs font-medium text-[var(--color-text-tertiary)] uppercase">Team Captains</p>
+          </div>
+
+          {/* Other Team Captains */}
+          {otherTeamCaptains.map((captain) => (
+            <button
+              key={captain.id}
+              onClick={() => handleStartDM(captain)}
+              className="w-full px-4 py-3 flex items-center gap-3 border-b border-[var(--color-border)] hover:bg-gray-50 transition-colors text-left"
+            >
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                  {captain.initials}
+                </div>
+                {captain.isOnline && (
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm">{captain.name}</p>
+                  <Badge className="bg-emerald-100 text-emerald-700 text-xs">Other Team</Badge>
+                </div>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  {captain.isOnline ? "Online" : "Offline"}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[var(--color-text-tertiary)] flex-shrink-0" />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // CHAT CONVERSATION VIEW
+  return (
+    <div className="h-full flex flex-col bg-[var(--color-bg)]">
+      {/* Header */}
+      <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] p-4 flex-shrink-0">
+        <div className="flex items-center gap-3 mb-3">
+          <button onClick={handleBackToList} className="text-[var(--color-text-secondary)]">
+            ← Back to Messages
+          </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center">
+              {isTeamChat ? (
+                <Users className="w-6 h-6 text-white" />
+              ) : (
+                <span className="text-sm font-medium text-white">{currentMember?.initials}</span>
+              )}
+            </div>
+            <div>
+              <h2 className="font-medium">{isTeamChat ? teamName : currentMember?.name}</h2>
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                {isTeamChat ? "12 members • 8 online" : currentMember?.isOnline ? "Online" : "Offline"}
+              </p>
             </div>
           </div>
-        )}
+          <button
+            onClick={() => toast.info("Info coming soon!")}
+            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0"
+          >
+            <Info className="w-5 h-5 text-[var(--color-text-secondary)]" />
+          </button>
+        </div>
+      </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <AnimatePresence>
-            {regularMessages.map((message, index) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03 }}
-                className={`flex gap-3 ${message.isMe ? "flex-row-reverse" : ""}`}
-              >
-                {/* Avatar */}
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <AnimatePresence>
+          {regularMessages.map((message, index) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+              className={`flex gap-3 ${message.isMe ? "flex-row-reverse" : ""}`}
+            >
+              {!message.isMe && (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                  {message.senderInitials}
+                </div>
+              )}
+
+              <div className={`flex flex-col ${message.isMe ? "items-end" : ""}`}>
                 {!message.isMe && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                    {message.senderInitials}
-                  </div>
-                )}
-
-                {/* Message Bubble */}
-                <div className={`flex-1 max-w-[75%] ${message.isMe ? "items-end" : ""}`}>
-                  {!message.isMe && (
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium">{message.sender}</span>
-                      {message.isCaptain && (
-                        <Badge className="bg-amber-100 text-amber-700 text-xs">
-                          Captain
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  <div
-                    className={`rounded-2xl p-3 ${
-                      message.isMe
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "bg-[var(--color-bg-elevated)] text-[var(--color-text)]"
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-[var(--color-text-tertiary)]">
-                      {message.timestamp}
-                    </span>
-                    {message.reactions && message.reactions.length > 0 && (
-                      <div className="flex gap-1">
-                        {message.reactions.map((reaction, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => handleReaction(message.id, reaction.emoji)}
-                            className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 ${
-                              reaction.hasReacted
-                                ? "bg-blue-100 border border-blue-300"
-                                : "bg-gray-100 border border-gray-300"
-                            }`}
-                          >
-                            <span>{reaction.emoji}</span>
-                            <span>{reaction.count}</span>
-                          </button>
-                        ))}
-                      </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium">{message.sender}</span>
+                    {message.isCaptain && (
+                      <Badge className="bg-amber-100 text-amber-700 text-xs">Captain</Badge>
                     )}
                   </div>
+                )}
+                <div
+                  className={`rounded-2xl p-3 max-w-xs ${
+                    message.isMe
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-[var(--color-bg-elevated)] text-[var(--color-text)]"
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Typing Indicator (optional) */}
-          <div className="flex gap-3 items-center opacity-50">
-            <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-            <div className="bg-gray-200 rounded-2xl px-4 py-2">
-              <div className="flex gap-1">
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-gray-400"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                />
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-gray-400"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                />
-                <motion.div
-                  className="w-2 h-2 rounded-full bg-gray-400"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                />
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-[var(--color-text-tertiary)]">{message.timestamp}</span>
+                  {message.reactions && message.reactions.length > 0 && (
+                    <div className="flex gap-1">
+                      {message.reactions.map((reaction, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleReaction(message.id, reaction.emoji)}
+                          className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${
+                            reaction.hasReacted
+                              ? "bg-blue-100 border border-blue-300"
+                              : "bg-gray-100 border border-gray-300 hover:bg-gray-200"
+                          }`}
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span>{reaction.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
-        {/* Input Area */}
-        <div className="bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] p-4">
-          <div className="flex items-end gap-2">
+      {/* Input Area */}
+      <div className="bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] p-4 flex-shrink-0">
+        <div className="flex items-end gap-2">
+          <button
+            onClick={() => toast.info("Image upload coming soon!")}
+            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0"
+          >
+            <Image className="w-5 h-5 text-[var(--color-text-secondary)]" />
+          </button>
+          <div className="flex-1 bg-gray-100 rounded-2xl px-4 py-2 flex items-center gap-2">
+            <Input
+              type="text"
+              placeholder="Type a message..."
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  handleSendMessage();
+                }
+              }}
+              className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-0"
+            />
             <button
-              onClick={() => toast.info("Image upload coming soon!")}
-              className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0"
+              onClick={() => toast.info("Emoji picker coming soon!")}
+              className="flex-shrink-0"
             >
-              <Image className="w-5 h-5 text-[var(--color-text-secondary)]" />
-            </button>
-            <div className="flex-1 bg-gray-100 rounded-2xl px-4 py-2 flex items-center gap-2">
-              <Input
-                type="text"
-                placeholder="Type a message..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    handleSendMessage();
-                  }
-                }}
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 px-0"
-              />
-              <button
-                onClick={() => toast.info("Emoji picker coming soon!")}
-                className="flex-shrink-0"
-              >
-                <Smile className="w-5 h-5 text-[var(--color-text-tertiary)]" />
-              </button>
-            </div>
-            <button
-              onClick={handleSendMessage}
-              disabled={!messageText.trim()}
-              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                messageText.trim()
-                  ? "bg-[var(--color-primary)] text-white"
-                  : "bg-gray-200 text-gray-400"
-              }`}
-            >
-              <Send className="w-5 h-5" />
+              <Smile className="w-5 h-5 text-[var(--color-text-tertiary)]" />
             </button>
           </div>
+          <button
+            onClick={handleSendMessage}
+            disabled={!messageText.trim()}
+            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+              messageText.trim()
+                ? "bg-[var(--color-primary)] text-white hover:opacity-90"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <Send className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>

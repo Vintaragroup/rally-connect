@@ -3,6 +3,7 @@ import { Badge } from "./ui/badge";
 import { Progress } from "./ui/progress";
 import { useState } from "react";
 import { motion } from "motion/react";
+import { EmptyState } from "./EmptyState";
 
 interface AchievementsScreenProps {
   onBack: () => void;
@@ -210,7 +211,14 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
 
         {/* Achievements Grid */}
         <div className="space-y-3">
-          {filteredAchievements.map((achievement, index) => {
+          {filteredAchievements.length === 0 ? (
+            <EmptyState
+              icon={selectedTab === "unlocked" ? Star : Lock}
+              title={selectedTab === "unlocked" ? "No achievements yet" : "No locked achievements"}
+              description={selectedTab === "unlocked" ? "Complete challenges to unlock achievements and earn points." : "You've unlocked all available achievements!"}
+            />
+          ) : (
+            filteredAchievements.map((achievement, index) => {
             const Icon = achievement.icon;
             return (
               <motion.div
@@ -291,7 +299,8 @@ export function AchievementsScreen({ onBack }: AchievementsScreenProps) {
                 </div>
               </motion.div>
             );
-          })}
+            })
+          )}
         </div>
 
         {/* Info Card */}

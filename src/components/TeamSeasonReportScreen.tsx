@@ -13,27 +13,29 @@ interface TeamSeasonReportScreenProps {
 
 export function TeamSeasonReportScreen({ onBack }: TeamSeasonReportScreenProps) {
   // Mock data
-  const teamData = {
-    name: "Merion Bocce Club",
-    division: "Division 1",
-    season: "Winter 24–25",
-    rank: 1,
-    wins: 5,
-    losses: 0,
-    gamesWon: 12,
-    gamesLost: 3,
-    pointsScored: 126,
-    pointsAgainst: 77,
-    weeklyNetPoints: [8, 15, 12, 18, 22, 14], // Net points per week
-    weeklyResults: [
-      { week: 1, result: "W", score: "4–1" },
-      { week: 2, result: "W", score: "3–2" },
-      { week: 3, result: "W", score: "4–1" },
-      { week: 4, result: "W", score: "2–3" },
-      { week: 5, result: "W", score: "4–1" },
-      { week: 6, result: "W", score: "3–2" }
-    ]
-  };
+  const teamData = null;
+
+  if (!teamData) {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] pb-6">
+        <div className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-soft)] text-white p-4 sm:p-6">
+          <button onClick={onBack} className="text-white/80 hover:text-white mb-3">
+            ← Back
+          </button>
+          <h1 className="text-xl sm:text-2xl font-bold">Team Season Report</h1>
+        </div>
+        <div className="p-4">
+          <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-8 text-center">
+            <TrendingUp className="w-12 h-12 text-[var(--color-text-tertiary)] mx-auto mb-3" />
+            <p className="text-[var(--color-text-secondary)]">No team data available</p>
+            <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
+              Join a team to view season report
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const totalMatches = teamData.wins + teamData.losses;
   const matchWinPercent = totalMatches > 0 ? Math.round((teamData.wins / totalMatches) * 100) : 0;
@@ -46,11 +48,11 @@ export function TeamSeasonReportScreen({ onBack }: TeamSeasonReportScreenProps) 
   };
 
   useEffect(() => {
-    if (teamData.rank === 1) {
+    if (teamData && teamData.rank === 1) {
       const confettiEffect = new ConfettiEffect();
       confettiEffect.start();
     }
-  }, [teamData.rank]);
+  }, [teamData?.rank]);
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] pb-6">

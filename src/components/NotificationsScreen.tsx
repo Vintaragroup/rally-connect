@@ -184,8 +184,9 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
                           <button
                             onClick={() => handleDelete(notification.id)}
                             className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                            aria-label={`Delete notification: ${notification.title}`}
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-4 h-4" aria-hidden="true" />
                           </button>
                         </div>
                         <p className="text-sm text-[var(--color-text-secondary)] mb-2">
@@ -204,6 +205,7 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
                             <button
                               onClick={() => handleMarkAsRead(notification.id)}
                               className="text-xs text-[var(--color-primary)] hover:underline"
+                              aria-label={`Mark as read: ${notification.title}`}
                             >
                               Mark as read
                             </button>
@@ -236,8 +238,9 @@ export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
                           <button
                             onClick={() => handleDelete(notification.id)}
                             className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]"
+                            aria-label={`Delete notification: ${notification.title}`}
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-4 h-4" aria-hidden="true" />
                           </button>
                         </div>
                         <p className="text-sm text-[var(--color-text-secondary)] mb-2">

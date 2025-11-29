@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ChevronRight, Camera, User } from "lucide-react";
+import { ChevronRight, Camera, User, AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { validateRequired, validatePhone, ValidationError } from "@/lib/validation/forms";
 
 interface ProfileSetupScreenProps {
   role: "player" | "captain";
@@ -12,9 +13,26 @@ interface ProfileSetupScreenProps {
 export function ProfileSetupScreen({ role, onNext, onBack }: ProfileSetupScreenProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationErrors([]);
+
+    // Validate name
+    const nameValidation = validateRequired(name, 'Full Name');
+    if (!nameValidation.isValid) {
+      setValidationErrors(nameValidation.errors);
+      return;
+    }
+
+    // Validate phone
+    const phoneValidation = validatePhone(phone);
+    if (!phoneValidation.isValid) {
+      setValidationErrors(phoneValidation.errors);
+      return;
+    }
+
     onNext({ name, phone });
   };
 
@@ -46,6 +64,17 @@ export function ProfileSetupScreen({ role, onNext, onBack }: ProfileSetupScreenP
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              {validationErrors.map((err, idx) => (
+                <div key={idx} className="flex gap-2 text-red-700 text-sm mb-1 last:mb-0">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>{err.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
           {/* Photo Upload */}
           <div className="flex justify-center mb-8">
             <button
@@ -68,8 +97,15 @@ export function ProfileSetupScreen({ role, onNext, onBack }: ProfileSetupScreenP
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="h-12"
+                className={`h-12 ${validationErrors.some(e => e.field === 'Full Name') ? 'border-red-500 focus:ring-red-500' : ''}`}
+                aria-invalid={validationErrors.some(e => e.field === 'Full Name')}
               />
+              {validationErrors.find(e => e.field === 'Full Name') && (
+                <p className="text-xs text-red-600 mt-1 flex gap-1">
+                  <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                  {validationErrors.find(e => e.field === 'Full Name')?.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -80,11 +116,18 @@ export function ProfileSetupScreen({ role, onNext, onBack }: ProfileSetupScreenP
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
-                className="h-12"
+                className={`h-12 ${validationErrors.some(e => e.field === 'phone') ? 'border-red-500 focus:ring-red-500' : ''}`}
+                aria-invalid={validationErrors.some(e => e.field === 'phone')}
               />
               <p className="text-xs text-[var(--color-text-secondary)] mt-1">
                 Used for team communication only
               </p>
+              {validationErrors.find(e => e.field === 'phone') && (
+                <p className="text-xs text-red-600 mt-1 flex gap-1">
+                  <AlertCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                  {validationErrors.find(e => e.field === 'phone')?.message}
+                </p>
+              )}
             </div>
           </div>
 

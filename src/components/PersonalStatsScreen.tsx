@@ -152,7 +152,7 @@ export function PersonalStatsScreen({ onBack, onViewAchievements }: PersonalStat
               AR
             </div>
             <div className="flex-1">
-              <h2 className="text-white mb-1">Alex Rivera</h2>
+              <h2 className="text-white mb-1">Your Stats</h2>
               <div className="flex items-center gap-2">
                 <Badge className="bg-white/20 text-white text-xs">Level 12</Badge>
                 <Badge className="bg-amber-500/20 text-amber-200 text-xs">⭐ Captain</Badge>
