@@ -311,7 +311,7 @@ export class AuthService {
           lastName: data.lastName || undefined,
           // Store additional profile fields if schema supports them
           ...(data.sports && { sports: data.sports }),
-          ...(data.role && { role: data.role.toUpperCase() }),
+          ...(data.role && { role: data.role.toUpperCase() as any }),
         },
       });
 

@@ -64,7 +64,7 @@ export class AuthController {
     if (!body.userId || !body.email) {
       throw new BadRequestException('userId and email are required');
     }
-    return this.authService.syncSupabaseUser(body.userId, body.email, body.fullName);
+    return this.authService.syncStackAuthUser(body.userId, body.email, body.fullName || '');
   }
 
   /**
