@@ -114,9 +114,18 @@ export class AuthService {
 
   async markOnboardingComplete(userId: string, data?: any) {
     try {
-      const user = await this.prisma.user.update({
+      const user = await this.prisma.user.upsert({
         where: { id: userId },
-        data: {
+        create: {
+          id: userId,
+          email: 'unknown@example.com', // Will be synced later
+          firstName: 'User',
+          lastName: '',
+          displayName: 'User',
+          onboardingCompleted: true,
+          role: data?.role ? data.role.toUpperCase() : 'MEMBER',
+        },
+        update: {
           onboardingCompleted: true,
           // Update role if provided
           ...(data?.role && { role: data.role.toUpperCase() }),
