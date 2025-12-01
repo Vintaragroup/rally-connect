@@ -1,5 +1,5 @@
 ---
-description: Documents role-based access control implementation for sports team management system
+description: Specification for implementing role-based access control and permissions in sports league management
 ---
 
 # === USER INSTRUCTIONS ===
@@ -62,50 +62,64 @@ $END$
 
 # role-based-access-model
 
-Core Role Structure (Importance Score: 85/100):
+Importance Score: 85/100
 
-1. Primary Roles
-- Captain: Full team management capabilities
-- Player: Limited to personal and team member functions 
-- Admin: League-wide administrative control
+## Role Hierarchy
 
-2. Access Control Implementation (src/components/ui/RoleGuard.tsx)
-- Supports both ANY and ALL role conditions
-- Handles complex role combinations for specific features
-- Custom authorization denial workflows
-- Role-specific loading states
+Three-tiered role system implementation:
+- Admin: Full system access, league management capabilities
+- Captain: Team management and player oversight permissions
+- Player: Basic participation and team interaction rights
 
-3. Role Assignment Flow (src/components/onboarding/OnboardingFlow.tsx)
-- Sport-specific role selection
-- Distinct captain vs player onboarding paths
-- Role verification during team creation/joining
-- Returning user role preservation
+## Permission Structure
 
-4. Captain Promotion System (src/components/admin-tabs/CaptainRequestsTab.tsx)
-- Request-based promotion workflow
-- Multi-step approval process
-- Custom rejection handling
-- Role transition management
+1. Admin Permissions
+- League creation and configuration
+- Captain approval/rejection workflow
+- Division and season management
+- Cross-team administrative actions
 
-Permission Hierarchy:
-
-1. Captain Permissions
+2. Captain Permissions
 - Team roster management
 - Practice scheduling
-- Match lineup creation
-- Team configuration updates
+- Team chat administration
+- Player availability tracking
+- Match reporting
 
-2. Player Permissions
-- Personal profile management
-- Availability updates
-- Team chat participation
+3. Player Permissions
+- Personal availability updates
 - Match participation
+- Team chat access
+- Achievement tracking
 
-3. Admin Permissions
-- League rules configuration
-- Captain request management
-- Team approval oversight
-- Division management
+## Access Control Implementation
+
+File: src/components/ui/RoleGuard.tsx
+- Role requirement combinations (ANY/ALL)
+- Hierarchical inheritance checking
+- Component-level access management
+
+## Role Assignment Workflows
+
+Captain Promotion System:
+- Two-way request system (player request or admin invitation)
+- Administrative approval required
+- Role validation checks
+- Automatic team permission updates
+
+## Sport-Specific Role Requirements
+
+- Different captain requirements per sport type
+- Sport-specific team size validations
+- Division-based role restrictions
+- Season-specific permission adjustments
+
+## Administrative Hierarchy
+
+- Association-level admins
+- League-specific administrators
+- Division coordinators
+- Team leadership structure
 
 $END$
 

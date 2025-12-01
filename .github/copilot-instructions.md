@@ -86,57 +86,62 @@ $END$
 - Explain your OBSERVATIONS clearly, then provide REASONING to identify the exact issue. Add console logs when needed to gather more information.
 
 
-Core Business Domain: Sports League Management Platform
-
-Primary Business Logic Components:
-
-1. Onboarding System (src/components/onboarding/OnboardingFlow.tsx)
-- Multi-step user progression specific to sports roles
-- Differentiated flows for captains vs players
-- Sport-specific team creation and joining logic
+SPORTS LEAGUE MANAGEMENT SYSTEM
 Importance Score: 85/100
 
-2. League Administration
-- Hierarchical sports organization (Sport → League → Season → Division)
-- Captain promotion workflow with approval/rejection
-- Sport-specific league rules and team configurations
-Importance Score: 80/100
+Core Business Components:
 
-3. Role Management
-- Custom role-based access control for sports context
-- Captain request processing with status tracking
-- Team-specific permission structures
-Importance Score: 75/100
+1. Role-Based Access Control (src/components/ui/RoleGuard.tsx)
+- Hierarchical role system (Admin > Captain > Player)
+- Multi-sport permission management
+- Captain approval workflows
+- Team-specific access controls
 
-4. Match System
+2. League Structure Management
+- Multi-tier organization: Sport > League > Season > Division > Team
+- Sport-specific rule enforcement
+- Division-based team placement
+- Custom scheduling logic per sport type
+
+3. Team Organization
+- Dual player/captain relationships
+- Position-based waitlist system
+- Team capacity management
+- Sport-specific roster rules
+
+4. Achievement & Rating System
+- Multi-tier achievements (common to legendary)
+- Sport-specific performance metrics
+- Division-based rating calculations
+- Historical progression tracking
+
+5. Match Management
 - Sport-specific scoring systems
-- Division-based matchup organization
-- Team statistics and rankings calculation
-Importance Score: 70/100
+- Weather impact assessment
+- Availability tracking
+- Practice session organization
 
-5. Team Management
-- Sport-specific roster validation
-- Captain assignment controls
-- Division placement logic
-Importance Score: 65/100
+Key Domain Features:
 
-Key Integration Points:
-1. League Structure
-- Three-tier organization model
-- Sport-specific constraints
-- Season status tracking
+1. Captain Management
+- Two-way promotion system (request/invite)
+- Administrative approval workflow
+- Role conflict resolution
+- Team transfer policies
 
-2. Access Control
-- Captain privilege management
-- Admin hierarchy implementation
-- Team-level permissions
+2. League Administration
+- Multi-sport configuration
+- Season scheduling
+- Division capacity control
+- Rule enforcement system
 
-3. Player Organization
-- Multi-sport categorization
-- Role-based workflow management
-- Team membership controls
+3. Team Communication
+- Role-based messaging hierarchy
+- Captain-specific channels
+- Team-wide announcements
+- Match coordination system
 
-The system implements comprehensive sports league management with particular focus on role hierarchies and sport-specific organizational requirements.
+The system implements specialized workflows for managing alternative sports leagues (bocce, pickleball, padel) with emphasis on team organization, role management, and sport-specific requirements.
 
 $END$
 

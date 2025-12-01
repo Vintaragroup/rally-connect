@@ -1,5 +1,5 @@
 ---
-description: Documentation for multi-step onboarding workflow logic and role-based state transitions in sports team management
+description: Defines onboarding flows and state transitions for new and returning users based on roles
 ---
 
 # === USER INSTRUCTIONS ===
@@ -58,49 +58,51 @@ $END$
 
 # onboarding-flow-logic
 
-Multi-step onboarding workflow implementation for sports team management system.
-
-Core Workflow Components:
-
-1. User Role Selection (src/components/onboarding/OnboardingFlow.tsx)
-- Sport selection with validation
-- Role determination (captain vs player)
-- Conditional flow branching based on selected role
+## Core Onboarding Workflow
 Importance Score: 85/100
 
-2. Captain-Specific Flow
-- Team creation workflow activation
-- League/division selection
-- Captain responsibilities acceptance
-- Team configuration setup
-Importance Score: 80/100
+Multi-step onboarding process with distinct paths:
 
-3. Player-Specific Flow
-- Team discovery and selection
-- Join request submission
-- Profile completion requirements
-- Skill level assessment
+1. Role-Based Flow Branching
+- Separates captain vs player onboarding paths
+- Enforces required profile completion steps per role
+- Handles returning user recognition and state restoration
+
+2. State Management
+- Tracks completion status of each onboarding step
+- Prevents skipping of required steps
+- Maintains user role context throughout flow
+
+3. Profile Creation Logic
+- Required fields vary by role (captain/player)
+- Validates sport-specific requirements
+- Integrates with team creation for captains
+
+## Role Transition Rules
 Importance Score: 75/100
 
-4. State Transitions
-- Sequential step validation
-- Role-specific state management
-- Progress persistence
-- Return user detection
+1. Captain Request Handling
+- Validates eligibility for captain role
+- Processes promotion requests with admin approval
+- Tracks rejection reasons and reapplication rules
+
+2. Access Control Integration
+- Implements hierarchical role permissions
+- Supports compound role requirements (ANY/ALL)
+- Controls feature access during onboarding
+
+## Team Integration
 Importance Score: 70/100
 
-Business Rules:
-- Captains must complete team setup before player recruitment
-- Players cannot bypass team association
-- Sport selection determines available divisions
-- Returning users follow abbreviated workflow
-- Role changes trigger revalidation of completed steps
+1. Captain-Specific Flows
+- Team creation during captain onboarding
+- Roster size validation per sport type
+- League/division placement logic
 
-Domain Model:
-- User -> Role -> Sport -> Team/Division structure
-- Role-based permission inheritance
-- Sport-specific team requirements
-- Captain approval workflows
+2. Player-Specific Flows  
+- Team joining workflow
+- Position/skill level collection
+- Sport preference tracking
 
 $END$
 

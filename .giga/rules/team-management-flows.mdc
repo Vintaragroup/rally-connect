@@ -1,5 +1,5 @@
 ---
-description: Specification for team management workflows including creation, joining, and role management in sports league context
+description: Defines team creation, invitation, and membership management workflows for sports league organization
 ---
 
 # === USER INSTRUCTIONS ===
@@ -56,58 +56,61 @@ $END$
 
 # team-management-flows
 
-## Team Creation Flow
-File: src/components/onboarding/CreateTeamScreen.tsx
-Importance Score: 75/100
-
-- Sport-specific team validation rules
-- Captain assignment during creation
-- Initial roster size requirements
-- League/division placement logic
-
-## Captain Request Management
-File: src/components/admin-tabs/CaptainRequestsTab.tsx
-Importance Score: 85/100
-
-- Multi-step captain promotion workflow
-- Request state transitions:
-  - Pending → Approved/Rejected
-  - Custom rejection reason handling
-  - Automatic role updates
-- Notification system for status changes
-
-## Team Joining Process
-File: src/components/WaitlistScreen.tsx
-Importance Score: 70/100
-
-- Position-based waitlist management
-- Captain approval workflow for new members
-- Dynamic position tracking
-- Sport-specific roster limit enforcement
-
-## Role Management
-File: src/components/ui/RoleGuard.tsx
 Importance Score: 80/100
 
-- Custom role validation for sports context
-- Support for multiple roles per user
-- Captain privilege management
-- Team-specific permission inheritance
+## Core Team Management Workflows
 
-## League Configuration
-File: src/components/admin-tabs/LeagueRulesTab.tsx
-Importance Score: 65/100
+1. Team Creation Process
+- Sport-specific validation rules for team formation
+- Automatic captain role assignment on team creation
+- Division placement logic based on skill levels
+- Team size limits enforced by sport type
 
-- Team naming convention enforcement
-- Player limit configurations
-- Captain transfer policies
-- League-specific team requirements
+2. Team Joining Mechanisms
+- Direct join for open teams
+- Captain approval required for closed teams 
+- Waitlist management for teams at capacity
+- Position-specific roster requirements
 
-Domain-Specific Rules:
-- Teams require minimum/maximum player counts based on sport
-- Captains must be active team members
-- Players can join multiple teams across different divisions
-- Automatic role revocation on team transfers
+3. Captain Request System
+- Two-way captain assignment:
+  * Player-initiated requests
+  * Admin-initiated invitations
+- Approval workflow with reason tracking
+- Captain transfer protocols between seasons
+- Maximum captains per team enforcement
+
+4. Team Membership Rules
+- Sport-specific roster size limits
+- Multiple team membership restrictions
+- Division-based eligibility checking
+- Season-specific roster locks
+
+5. Invitation Management
+- Time-limited team invitations
+- Role-based invitation permissions
+- Multi-step approval process
+- Automatic waitlist processing
+
+## Administrative Controls
+
+1. Team Structure Enforcement
+- Sport-specific minimum player requirements
+- Division capacity management
+- Season-based team activation/deactivation
+- Cross-division team movement restrictions
+
+2. Captain Management
+- Captain qualification criteria
+- Transfer period restrictions
+- Multiple captain coordination
+- Emergency captain replacement protocol
+
+3. Roster Management
+- Player eligibility verification
+- Cross-team conflict detection
+- Division rebalancing tools
+- Season rollover procedures
 
 $END$
 
