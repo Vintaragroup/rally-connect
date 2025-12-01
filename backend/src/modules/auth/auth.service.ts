@@ -121,9 +121,9 @@ export class AuthService {
           email: 'unknown@example.com', // Will be synced later
           firstName: 'User',
           lastName: '',
+          password: 'oauth_user', // Placeholder for OAuth users
           onboardingCompleted: true,
           role: data?.role ? data.role.toUpperCase() : 'MEMBER',
-          // password is optional for OAuth users
         },
         update: {
           onboardingCompleted: true,
@@ -201,7 +201,7 @@ export class AuthService {
           email,
           firstName: firstName || displayName,
           lastName: lastName || '',
-          // OAuth users don't have local passwords
+          password: 'oauth_user', // Placeholder for OAuth users
           onboardingCompleted: false,
         },
       });
