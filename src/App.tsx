@@ -204,8 +204,10 @@ export default function App() {
       return;
     }
     
-    if (currentPath.includes('/auth/callback')) {
+    // Check for OAuth callback - can be /auth/callback or just /#access_token=...
+    if (currentPath.includes('/auth/callback') || window.location.hash.includes('access_token')) {
       console.log('✓ Detected OAuth callback route');
+      console.log('Hash fragment:', window.location.hash.substring(0, 100));
       setCurrentScreen("oauth-callback");
       return;
     }
