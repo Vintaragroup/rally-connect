@@ -118,27 +118,14 @@ export class AuthService {
         where: { id: userId },
         data: {
           onboardingCompleted: true,
-          // Store additional onboarding data if provided
-          ...(data?.sports && { sports: data.sports }),
+          // Update role if provided
           ...(data?.role && { role: data.role.toUpperCase() }),
         },
       });
 
-      // TODO: Create corresponding Player or Captain record based on role
-      // if (data?.role === 'captain' && data?.teamId) {
-      //   await this.prisma.captain.create({
-      //     data: {
-      //       userId: user.id,
-      //       teamId: data.teamId,
-      //     },
-      //   });
-      // } else if (data?.role === 'player') {
-      //   await this.prisma.player.create({
-      //     data: {
-      //       userId: user.id,
-      //     },
-      //   });
-      // }
+      // Note: Sports are already stored on the Player record (via sportId)
+      // Player and Captain records are created during team creation flow
+      // No need to create them here as they already exist
 
       // TODO: Emit analytics event
       // this.analyticsService.trackOnboardingComplete(user.id);
