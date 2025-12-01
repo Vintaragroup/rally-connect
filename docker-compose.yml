@@ -10,6 +10,7 @@ services:
       - ./.env.local
     environment:
       - VITE_API_URL=http://10.0.0.2:4802
+      - NODE_ENV=development
     volumes:
       - ./.env.local:/app/.env.local
       - ./src:/app/src
