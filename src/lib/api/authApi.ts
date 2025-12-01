@@ -50,7 +50,7 @@ export async function completeOnboarding(onboardingData: {
     }
 
     // Call backend to mark onboarding as complete
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/complete-onboarding`, {
+    const response = await fetch(`/api/auth/complete-onboarding`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export async function syncUserProfile(profileData: {
     }
 
     // Call backend to sync user to database
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/sync-user`, {
+    const response = await fetch(`/api/auth/sync-user`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

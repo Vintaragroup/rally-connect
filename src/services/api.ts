@@ -9,7 +9,9 @@ import { supabase } from '../lib/supabase/client';
 import { offlineCache } from '../lib/offline/cache';
 import { requestQueue, retryQueuedRequests } from '../lib/offline/requestQueue';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4800';
+// Use relative path for API calls so it works from any domain/IP
+// The backend is served through nginx at /api/
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export interface ApiResponse<T> {
   data?: T;
