@@ -91,6 +91,15 @@ export class TeamsService {
       throw new BadRequestException('Missing required fields: name, sport, userId');
     }
 
+    // Verify user exists
+    const userExists = await this.prisma.user.findUnique({
+      where: { id: data.userId },
+    });
+
+    if (!userExists) {
+      throw new BadRequestException('User does not exist. Please complete onboarding first.');
+    }
+
     // Get first available league (no specific filter)
     const league = await this.prisma.league.findFirst();
 
