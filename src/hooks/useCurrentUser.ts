@@ -54,7 +54,7 @@ export function useCurrentUser(): UseCurrentUserResult {
       setLoading(true);
       setError(null);
 
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4800';
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/auth/me`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

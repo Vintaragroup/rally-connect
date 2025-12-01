@@ -25,7 +25,7 @@ interface CaptainRequestsTabProps {
 }
 
 const CaptainRequestsTab: React.FC<CaptainRequestsTabProps> = ({ leagueId, userId }) => {
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4802";
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
   const [requests, setRequests] = useState<CaptainRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

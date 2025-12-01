@@ -37,7 +37,7 @@ const AssociationAdminDashboard: React.FC<{ userId: string }> = ({ userId }) => 
     try {
       setLoading(true);
       // Fetch admin status to get all leagues where user is admin
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4800";
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/association-admin/check-admin-status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

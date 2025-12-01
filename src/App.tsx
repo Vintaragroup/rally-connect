@@ -87,7 +87,7 @@ export default function App() {
     const syncUserToBackend = async () => {
       if (user?.id && isAuthenticated && !isLoading && !userSynced) {
         try {
-          const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4800";
+          const apiUrl = import.meta.env.VITE_API_URL || '/api';
           const syncResponse = await fetch(`${apiUrl}/auth/sync-user`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

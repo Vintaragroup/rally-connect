@@ -19,7 +19,7 @@ interface Player {
 }
 
 const CaptainInvitationsTab: React.FC<CaptainInvitationsTabProps> = ({ leagueId, userId }) => {
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4802";
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

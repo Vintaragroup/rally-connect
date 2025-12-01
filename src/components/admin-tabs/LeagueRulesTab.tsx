@@ -21,7 +21,7 @@ interface LeagueRulesTabProps {
 }
 
 const LeagueRulesTab: React.FC<LeagueRulesTabProps> = ({ leagueId }) => {
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4802";
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
   const [rules, setRules] = useState<LeagueRules | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

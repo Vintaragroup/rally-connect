@@ -23,7 +23,7 @@ interface AdminsTabProps {
 }
 
 const AdminsTab: React.FC<AdminsTabProps> = ({ leagueId, userId }) => {
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4802";
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
