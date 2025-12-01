@@ -60,11 +60,15 @@ export class AuthController {
    * PRODUCTION: This should only be called by server-side functions or webhooks
    */
   @Post('sync-user')
-  async syncUser(@Body() body: { userId: string; email: string; fullName?: string }) {
-    if (!body.userId || !body.email) {
-      throw new BadRequestException('userId and email are required');
+  async syncUser(@Body() body: { stackUserId?: string; userId?: string; email: string; displayName?: string; fullName?: string }) {
+    // Support both stackUserId and userId for backward compatibility
+    const stackUserId = body.stackUserId || body.userId;
+    const displayName = body.displayName || body.fullName;
+    
+    if (!stackUserId || !body.email) {
+      throw new BadRequestException('stackUserId (or userId) and email are required');
     }
-    return this.authService.syncStackAuthUser(body.userId, body.email, body.fullName || '');
+    return this.authService.syncStackAuthUser(stackUserId, body.email, displayName || '');
   }
 
   /**
