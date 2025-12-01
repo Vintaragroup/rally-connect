@@ -203,7 +203,7 @@ CREATE UNIQUE INDEX "WaitlistEntry_matchId_playerId_key" ON "WaitlistEntry"("mat
 CREATE INDEX "ChatMessage_teamId_createdAt_idx" ON "ChatMessage"("teamId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "Match_leagueId_scheduledAt_idx" ON "Match"("leagueId", "scheduledAt");
+CREATE INDEX "Match_seasonId_startTime_idx" ON "Match"("seasonId", "startTime");
 
 -- CreateIndex
 CREATE INDEX "Notification_userId_read_createdAt_idx" ON "Notification"("userId", "read", "createdAt");

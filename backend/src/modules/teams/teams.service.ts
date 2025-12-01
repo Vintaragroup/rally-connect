@@ -174,19 +174,12 @@ export class TeamsService {
     });
 
     // Create TeamCaptain join record to link the captain to the team
+    // This establishes the captain as both a captain and a player on the team
     await this.prisma.teamCaptain.create({
       data: {
         teamId: team.id,
         playerId: player.id,
         captainId: captain.id,
-      },
-    });
-
-    // Create TeamPlayer join record to also add as player
-    await this.prisma.teamPlayer.create({
-      data: {
-        teamId: team.id,
-        playerId: player.id,
       },
     });
 
