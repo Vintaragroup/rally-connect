@@ -9,6 +9,10 @@
 
   export default defineConfig({
     plugins: [react()],
+    optimizeDeps: {
+      include: ['react', 'react-dom'],
+      exclude: ['react/jsx-runtime', 'react/jsx-dev-runtime'],
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
