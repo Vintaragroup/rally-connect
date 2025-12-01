@@ -49,21 +49,26 @@ export async function completeOnboarding(onboardingData: {
       throw new Error('Not authenticated');
     }
 
-    // TODO: Once backend is integrated, use this:
-    // const response = await fetch('/api/auth/complete-onboarding', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${user.user_metadata.auth_token}`
-    //   },
-    //   body: JSON.stringify({
-    //     sports: onboardingData.sports,
-    //     role: onboardingData.role,
-    //     teamId: onboardingData.teamId,
-    //   })
-    // });
+    // Call backend to mark onboarding as complete
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/complete-onboarding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        sports: onboardingData.sports,
+        role: onboardingData.role,
+        teamId: onboardingData.teamId,
+      })
+    });
 
-    // For now, update user metadata locally
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to complete onboarding');
+    }
+
+    // Also update user metadata in Supabase for local caching
     const { error } = await supabase.auth.updateUser({
       data: {
         onboarding_completed: true,
@@ -74,7 +79,8 @@ export async function completeOnboarding(onboardingData: {
     });
 
     if (error) {
-      throw error;
+      console.warn('Warning: Could not update Supabase metadata:', error);
+      // Don't throw - backend update succeeded even if metadata update failed
     }
 
     console.log('✅ Onboarding marked as complete');
@@ -87,6 +93,7 @@ export async function completeOnboarding(onboardingData: {
 
 /**
  * Sync user profile with backend database
+ * This creates/updates the User record in the database
  */
 export async function syncUserProfile(profileData: {
   full_name: string;
@@ -101,18 +108,28 @@ export async function syncUserProfile(profileData: {
       throw new Error('Not authenticated');
     }
 
-    // TODO: Once backend is integrated, use this:
-    // const response = await fetch('/api/users/profile', {
-    //   method: 'PUT',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${user.user_metadata.auth_token}`
-    //   },
-    //   body: JSON.stringify(profileData)
-    // });
-    // return response.json();
+    // Call backend to sync user to database
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/sync-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        email: user.email,
+        fullName: profileData.full_name,
+      })
+    });
 
-    // For now, update user metadata
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to sync user');
+    }
+
+    const result = await response.json();
+    console.log('✅ User synced with backend:', result);
+
+    // Also update user metadata in Supabase for local caching
     const { error } = await supabase.auth.updateUser({
       data: {
         full_name: profileData.full_name,
@@ -123,10 +140,11 @@ export async function syncUserProfile(profileData: {
     });
 
     if (error) {
-      throw error;
+      console.warn('Warning: Could not update Supabase metadata:', error);
+      // Don't throw - backend sync succeeded even if metadata update failed
     }
 
-    return true;
+    return result;
   } catch (error) {
     console.error('Error syncing user profile:', error);
     throw error;
