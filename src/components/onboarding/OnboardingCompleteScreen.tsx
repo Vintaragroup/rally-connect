@@ -2,7 +2,7 @@ import { CheckCircle2, Trophy } from "lucide-react";
 import { Button } from "../ui/button";
 
 interface OnboardingCompleteScreenProps {
-  role: "player" | "captain";
+  role: "player" | "captain" | "member";
   teamName: string;
   onComplete: () => void;
   isReturningUser?: boolean;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { RegisterScreen } from "./components/RegisterScreen";
-import { OnboardingFlow } from "./components/onboarding/OnboardingFlow";
+import { SimplifiedOnboardingFlow } from "./components/onboarding/SimplifiedOnboardingFlow";
 import { AppShell } from "./components/AppShell";
 import { HomeScreen } from "./components/HomeScreen";
 import { OAuthCallbackHandler } from "./pages/OAuthCallbackHandler";
@@ -77,7 +77,6 @@ export default function App() {
   const { user: currentUser, loading: userLoading } = useCurrentUser();
   const [currentScreen, setCurrentScreen] = useState<Screen>("loading");
   const [activeTab, setActiveTab] = useState<"home" | "schedule" | "teams" | "ratings" | "more" | "admin">("home");
-  const [isReturningUser, setIsReturningUser] = useState(false);
   const [userRole, setUserRole] = useState<"player" | "captain" | "admin" | null>(null);
   const [isAssociationAdmin, setIsAssociationAdmin] = useState(false);
   const [userSynced, setUserSynced] = useState(false);
@@ -225,11 +224,9 @@ export default function App() {
       if (currentUser.onboardingCompleted) {
         // Returning user who completed onboarding - go to home
         setCurrentScreen("home");
-        setIsReturningUser(true);
       } else {
         // Returning user or new user - go to onboarding
         setCurrentScreen("onboarding");
-        setIsReturningUser(false); // New/incomplete onboarding flow
       }
     } else {
       // Not authenticated - show welcome screen
@@ -303,11 +300,8 @@ export default function App() {
       )}
       
       {currentScreen === "onboarding" && (
-        <OnboardingFlow
-          isReturningUser={isReturningUser}
-          onComplete={(role) => {
-            setUserRole(role);
-            
+        <SimplifiedOnboardingFlow
+          onComplete={() => {
             // Mark onboarding as complete on backend
             const saveOnboarding = async () => {
               try {
