@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dashboard } from '../pages/admin/Dashboard';
 import { CaptainRequests } from '../pages/admin/CaptainRequests';
+import { JoinRequests } from '../pages/admin/JoinRequests';
 import { Leagues } from '../pages/admin/Leagues';
 import { Seasons } from '../pages/admin/Seasons';
 import { Divisions } from '../pages/admin/Divisions';
@@ -54,6 +55,7 @@ export function AdminLayout({ onExit }: AdminLayoutProps) {
     const titles: Record<string, string> = {
       dashboard: '',
       'captain-requests': 'Captain Requests',
+      'join-requests': 'Join Requests',
       leagues: 'Leagues',
       seasons: 'Seasons',
       divisions: 'Divisions',
@@ -71,6 +73,8 @@ export function AdminLayout({ onExit }: AdminLayoutProps) {
         return <Dashboard />;
       case 'captain-requests':
         return <CaptainRequests />;
+      case 'join-requests':
+        return <JoinRequests />;
       case 'leagues':
         return <Leagues />;
       case 'seasons':

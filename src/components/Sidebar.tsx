@@ -40,6 +40,11 @@ export function Sidebar({ pendingRequests = 0, onExitAdmin, isMobileMenuOpen = f
       badge: pendingRequests,
     },
     {
+      path: '/admin/join-requests',
+      label: 'Join Requests',
+      icon: <UserCheck className="w-5 h-5" />,
+    },
+    {
       path: '/admin/leagues',
       label: 'Leagues',
       icon: <Trophy className="w-5 h-5" />,

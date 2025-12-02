@@ -4,7 +4,7 @@ import { RoleSelectionScreen } from "./RoleSelectionScreen";
 import { ProfileSetupScreen } from "./ProfileSetupScreen";
 import { CreateTeamScreen } from "./CreateTeamScreen";
 import { InvitePlayersScreen } from "./InvitePlayersScreen";
-import { JoinTeamScreen } from "./JoinTeamScreen";
+import { JoinTeamScreen } from "../joining/JoinTeamScreen";
 import { OnboardingCompleteScreen } from "./OnboardingCompleteScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import { completeOnboarding, syncUserProfile } from "@/lib/api/authApi";
@@ -36,6 +36,7 @@ interface OnboardingData {
     sport?: string;
     club?: string;
   };
+  leagueId?: string;
 }
 
 export function OnboardingFlow({ onComplete, isReturningUser = false }: OnboardingFlowProps) {
@@ -81,7 +82,11 @@ export function OnboardingFlow({ onComplete, isReturningUser = false }: Onboardi
   };
 
   const handleProfileSetup = (profile: { name: string; phone: string }) => {
-    setData({ ...data, profile });
+    setData({ 
+      ...data, 
+      profile,
+      leagueId: data.sports[0] || "default"
+    });
     if (data.role === "captain") {
       setCurrentStep("create-team");
     } else {
@@ -211,6 +216,8 @@ export function OnboardingFlow({ onComplete, isReturningUser = false }: Onboardi
   if (currentStep === "join-team") {
     return (
       <JoinTeamScreen
+        userId={user?.id || ""}
+        leagueId={data.leagueId || data.sports[0] || "default"}
         onComplete={handleJoinTeam}
         onBack={goBack}
       />
