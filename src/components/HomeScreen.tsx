@@ -43,11 +43,25 @@ export function HomeScreen({
 
   useEffect(() => {
     const fetchUserTeams = async () => {
+      if (!user?.id) {
+        console.log('⏳ HomeScreen: Waiting for user ID...');
+        return;
+      }
+      
       try {
-        const response = await apiService.getTeams();
-        setUserTeams(response.data || []);
+        // Use getUserTeams with userId to ensure we get THIS user's teams only
+        // Don't use cached data that might be from a previous user
+        const response = await apiService.getUserTeams(user.id);
+        const teams = response.data || [];
+        console.log('📍 HomeScreen: Fetched teams for user:', {
+          userId: user.id,
+          count: teams.length,
+          teams: teams.map((t: any) => ({ id: t.id, name: t.name })),
+          showJoinUI: teams.length === 0
+        });
+        setUserTeams(teams);
         // Close join modal if user now has teams
-        if ((response.data || []).length > 0) {
+        if (teams.length > 0) {
           setShowJoinTeam(false);
         }
       } catch (error) {
@@ -56,7 +70,7 @@ export function HomeScreen({
       }
     };
     fetchUserTeams();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchMatches = async () => {
