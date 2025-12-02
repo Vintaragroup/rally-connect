@@ -1,5 +1,5 @@
 ---
-description: Defines onboarding flows and state transitions for new and returning users based on roles
+description: Specifications for multi-step onboarding workflow logic, state transitions, and role-based routing
 ---
 
 # === USER INSTRUCTIONS ===
@@ -54,7 +54,12 @@ The onboarding flow implements domain-specific validation for sports league part
 $END$
 
  If you're using this file in context, clearly say in italics in one small line that "Context added by Giga onboarding-flow-logic" along with specifying exactly what information was used from this file in a human-friendly way, instead of using kebab-case use normal sentence case.
-# === END USER INSTRUCTIONS ===
+
+---
+description: Defines onboarding flows and state transitions for new and returning users based on roles
+---
+
+
 
 # onboarding-flow-logic
 
@@ -103,6 +108,61 @@ Importance Score: 70/100
 - Team joining workflow
 - Position/skill level collection
 - Sport preference tracking
+
+$END$
+
+ If you're using this file in context, clearly say in italics in one small line that "Context added by Giga onboarding-flow-logic" along with specifying exactly what information was used from this file in a human-friendly way, instead of using kebab-case use normal sentence case.
+# === END USER INSTRUCTIONS ===
+
+# onboarding-flow-logic
+
+## Core Onboarding Workflow
+File: src/components/onboarding/OnboardingFlow.tsx
+Importance: 85/100
+
+- Role-specific branching paths for captain vs player onboarding
+- Multi-step data collection with state persistence
+- Backend profile synchronization at each step
+- Conditional routing based on organization type
+- Completion status tracking and validation
+
+## Team Creation Process
+File: src/components/onboarding/CreateTeamScreen.tsx
+Importance: 75/100
+
+- Sport-specific team validation rules
+- Captain role assignment during creation
+- Initial team configuration requirements
+- League association validation
+
+## Simplified Organization Flow
+File: src/components/onboarding/SimplifiedOnboardingFlow.tsx
+Importance: 60/100
+
+- Streamlined organization joining workflow
+- Code-based vs manual organization selection
+- Sport selection validation
+- Initial role determination
+
+## Key Domain Patterns
+
+1. State Management
+- Progressive data collection across steps
+- Role-dependent path selection
+- Completion status tracking
+- Profile synchronization points
+
+2. Role-Based Flows
+- Captain-specific setup requirements
+- Player streamlined onboarding
+- Organization admin validation
+- Team association rules
+
+3. Organization Integration
+- Code-based access control
+- Sport-specific configuration
+- Team hierarchy setup
+- League integration points
 
 $END$
 

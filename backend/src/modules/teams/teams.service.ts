@@ -1,5 +1,6 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class TeamsService {
@@ -194,5 +195,219 @@ export class TeamsService {
 
     return team;
   }
-}
+
+  /**
+   * Join a team using an invitation code
+   * - Validates code
+   * - Adds user to team + league
+   * - Creates LeagueMember record
+   */
+  async joinByCode(data: {
+    code: string;
+    userId: string;
+  }): Promise<{
+    teamId: string;
+    leagueId: string;
+    teamName: string;
+    success: boolean;
+  }> {
+    try {
+      // Validate user exists
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.userId },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Find and validate code
+      const invitationCode = await this.prisma.invitationCode.findUnique({
+        where: { code: data.code },
+      });
+
+      if (!invitationCode) {
+        throw new BadRequestException('Invalid invitation code');
+      }
+
+      // Check if code is expired
+      if (invitationCode.expiresAt && new Date() > invitationCode.expiresAt) {
+        throw new BadRequestException('Invitation code has expired');
+      }
+
+      // Check usage limit
+      if (invitationCode.usedBy.length >= invitationCode.usageLimit) {
+        throw new BadRequestException('Invitation code usage limit reached');
+      }
+
+      // Validate teamId exists in code
+      if (!invitationCode.teamId) {
+        throw new BadRequestException('This code is not associated with a team');
+      }
+
+      // Get the team
+      const team = await this.prisma.team.findUnique({
+        where: { id: invitationCode.teamId },
+        include: {
+          league: true,
+        },
+      });
+
+      if (!team) {
+        throw new NotFoundException('Team not found');
+      }
+
+      // Check if user is already on team
+      const existingMember = await this.prisma.teamPlayer.findUnique({
+        where: {
+          teamId_playerId: {
+            teamId: team.id,
+            playerId: (await this.prisma.player.findUnique({
+              where: { userId: data.userId },
+              select: { id: true },
+            }))?.id || '',
+          },
+        },
+      });
+
+      if (existingMember) {
+        throw new BadRequestException('User is already a member of this team');
+      }
+
+      // Check if user is already in league
+      let leagueMember = await this.prisma.leagueMember.findUnique({
+        where: {
+          userId_leagueId: {
+            userId: data.userId,
+            leagueId: team.leagueId,
+          },
+        },
+      });
+
+      // Create LeagueMember if doesn't exist
+      if (!leagueMember) {
+        leagueMember = await this.prisma.leagueMember.create({
+          data: {
+            userId: data.userId,
+            leagueId: team.leagueId,
+          },
+        });
+      }
+
+      // Get or create player record
+      let player = await this.prisma.player.findUnique({
+        where: { userId: data.userId },
+      });
+
+      if (!player) {
+        player = await this.prisma.player.create({
+          data: {
+            userId: data.userId,
+            sportId: team.sportId,
+          },
+        });
+      }
+
+      // Add user to team as a player
+      await this.prisma.teamPlayer.create({
+        data: {
+          teamId: team.id,
+          playerId: player.id,
+        },
+      });
+
+      // Redeem code - add user to usedBy array
+      await this.prisma.invitationCode.update({
+        where: { code: data.code },
+        data: {
+          usedBy: {
+            push: data.userId,
+          },
+          isUsed: invitationCode.usageLimit === 1, // Mark as used if single-use
+        },
+      });
+
+      // Update user's current organization
+      await this.prisma.user.update({
+        where: { id: data.userId },
+        data: {
+          currentOrganizationId: team.leagueId,
+        },
+      });
+
+      console.log(
+        `✓ User ${data.userId} joined team ${team.id} via code ${data.code}`
+      );
+
+      return {
+        teamId: team.id,
+        leagueId: team.leagueId,
+        teamName: team.name,
+        success: true,
+      };
+    } catch (error) {
+      console.error('❌ Error joining by code:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a team-specific invitation code
+   * - Admin creates code tied to specific team
+   * - Can be shared to recruit players
+   */
+  async generateTeamCode(data: {
+    teamId: string;
+    createdBy: string;
+    expiresAt?: Date;
+  }): Promise<{ code: string; success: boolean }> {
+    try {
+      // Verify team exists
+      const team = await this.prisma.team.findUnique({
+        where: { id: data.teamId },
+      });
+
+      if (!team) {
+        throw new NotFoundException('Team not found');
+      }
+
+      // Verify user is admin or team captain (simple check)
+      // TODO: Add role-based authorization check
+
+      // Generate unique code
+      const code = this.generateRandomCode();
+
+      // Create invitation code tied to team
+      const invitationCode = await this.prisma.invitationCode.create({
+        data: {
+          code,
+          organizationId: team.leagueId,
+          sportId: team.sportId,
+          teamId: data.teamId,
+          createdBy: data.createdBy,
+          expiresAt: data.expiresAt,
+        },
+      });
+
+      console.log(`✓ Team invitation code generated: ${code} for team ${data.teamId}`);
+
+      return {
+        code: invitationCode.code,
+        success: true,
+      };
+    } catch (error) {
+      console.error('❌ Error generating team code:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate random 12-character code
+   */
+  private generateRandomCode(): string {
+    return randomBytes(9)
+      .toString('hex')
+      .substring(0, 12)
+      .toUpperCase();
+  }
 
