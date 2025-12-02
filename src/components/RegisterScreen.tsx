@@ -94,7 +94,12 @@ export function RegisterScreen({ isSignIn: initialIsSignIn = false, onComplete, 
       // Validate password
       const passwordValidation = validatePassword(password);
       if (!passwordValidation.isValid) {
-        setValidationErrors(passwordValidation.errors);
+        setValidationErrors(
+          passwordValidation.errors.map(msg => ({
+            field: 'password',
+            message: msg,
+          }))
+        );
         return;
       }
 

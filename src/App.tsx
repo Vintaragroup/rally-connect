@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
 import { useAuth } from "./contexts/AuthContext";
 import { useCurrentUser } from "./hooks/useCurrentUser";
+import { clearUserCache } from "./hooks/useCurrentUser";
 
 type Screen = 
   | "welcome" 
@@ -318,9 +319,11 @@ export default function App() {
                   );
                   
                   if (response.ok) {
-                    console.log('✓ Onboarding marked complete, refetching user data');
-                    // Refetch user to get updated onboardingCompleted status
-                    // The useCurrentUser hook will update automatically
+                    console.log('✓ Onboarding marked complete, clearing user cache');
+                    // Clear the user cache so next fetch gets fresh data with onboardingCompleted=true
+                    clearUserCache();
+                    // The routing will be handled by the useEffect watching currentUser
+                    // Once currentUser updates with onboardingCompleted=true, it will navigate to home
                   } else {
                     console.error("Failed to mark onboarding complete");
                   }
@@ -331,9 +334,6 @@ export default function App() {
               }
             };
             saveOnboarding();
-            
-            // The routing will be handled by the useEffect watching currentUser
-            // Once currentUser updates with onboardingCompleted=true, it will navigate to home
           }}
         />
       )}

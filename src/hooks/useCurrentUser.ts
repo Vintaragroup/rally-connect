@@ -26,6 +26,16 @@ let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Clear the user cache to force a refetch on next request
+ * Use this after operations that change user state (e.g., onboarding completion)
+ */
+export function clearUserCache(): void {
+  userCache = null;
+  cacheTimestamp = 0;
+  console.log('✓ User cache cleared');
+}
+
+/**
  * Hook to fetch current user with roles from backend
  * Caches result to avoid repeated API calls
  */
