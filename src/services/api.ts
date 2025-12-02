@@ -274,6 +274,43 @@ class ApiService {
   async getStandingsByDivision(divisionId: string) {
     return this.request(`/standings/division/${divisionId}`);
   }
+
+  // Team Joining (Phase 1B & 1C)
+  async joinTeamByCode(code: string, userId: string) {
+    return this.request('/teams/join-by-code', {
+      method: 'POST',
+      body: JSON.stringify({ code, userId }),
+    });
+  }
+
+  async requestJoinTeam(teamId: string, userId: string, message?: string) {
+    return this.request(`/teams/${teamId}/request-join`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, message }),
+    });
+  }
+
+  async getTeamsLookingForPlayers(leagueId: string) {
+    return this.request(`/leagues/${leagueId}/teams-looking`);
+  }
+
+  async getPendingJoinRequests(teamId: string) {
+    return this.request(`/teams/${teamId}/pending-joins`);
+  }
+
+  async approveJoinRequest(teamId: string, requestId: string) {
+    return this.request(`/teams/${teamId}/approve-join/${requestId}`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  async declineJoinRequest(teamId: string, requestId: string) {
+    return this.request(`/teams/${teamId}/decline-join/${requestId}`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
 }
 
 export const apiService = new ApiService();
