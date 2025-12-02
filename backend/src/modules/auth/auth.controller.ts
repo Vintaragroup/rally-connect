@@ -71,6 +71,13 @@ export class AuthController {
     const stackUserId = body.stackUserId || body.userId;
     const displayName = body.displayName || body.fullName;
     
+    console.log('📝 POST /auth/sync-user called with:', {
+      stackUserId,
+      email: body.email,
+      displayName,
+      bodyKeys: Object.keys(body),
+    });
+    
     if (!stackUserId || !body.email) {
       throw new BadRequestException('stackUserId (or userId) and email are required');
     }

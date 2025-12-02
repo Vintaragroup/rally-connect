@@ -160,44 +160,30 @@ export class AuthService {
 
   /**
    * Get or create user from Supabase OAuth token
+   * Uses email as unique identifier - NOT the Supabase user ID
    */
   async syncStackAuthUser(stackUserId: string, email: string, displayName: string) {
     const [firstName, lastName] = displayName.split(' ');
 
+    console.log('🔄 syncStackAuthUser called:', {
+      stackUserId,
+      email,
+      displayName,
+      firstName,
+      lastName,
+    });
+
     try {
-      // First, check if user exists by email (from previous auth attempts)
-      const existingUserByEmail = await this.prisma.user.findUnique({
+      // Upsert user by email: update if exists, create if doesn't
+      const user = await this.prisma.user.upsert({
         where: { email },
-      });
-
-      if (existingUserByEmail) {
-        // User exists with this email - update their ID to match Supabase ID
-        const user = await this.prisma.user.update({
-          where: { email },
-          data: {
-            id: stackUserId,
-            firstName: firstName || displayName,
-            lastName: lastName || '',
-          },
-        });
-
-        console.log(`✓ User synced (existing email): ${stackUserId} (${email})`);
-
-        return {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-          },
-          onboardingCompleted: (user as any).onboardingCompleted ?? false,
-        };
-      }
-
-      // No existing user, create new one
-      const user = await this.prisma.user.create({
-        data: {
-          id: stackUserId,
+        update: {
+          // If user exists by email, just update the name fields
+          firstName: firstName || displayName,
+          lastName: lastName || '',
+        },
+        create: {
+          // Let Prisma generate the ID, don't use stackUserId
           email,
           firstName: firstName || displayName,
           lastName: lastName || '',
@@ -206,7 +192,11 @@ export class AuthService {
         },
       });
 
-      console.log(`✓ User synced (new): ${stackUserId} (${email})`);
+      console.log(`✓ User synced: ${user.id} (${email})`, {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        onboardingCompleted: (user as any).onboardingCompleted,
+      });
 
       return {
         user: {
@@ -218,7 +208,12 @@ export class AuthService {
         onboardingCompleted: (user as any).onboardingCompleted ?? false,
       };
     } catch (error) {
-      console.error('❌ Error syncing user:', error);
+      console.error('❌ Error syncing user:', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        stackUserId,
+        email,
+      });
       throw error;
     }
   }
