@@ -142,40 +142,13 @@ export function TeamDetailScreen({ onViewMatch, onViewTeamChat, onViewTeamReport
           <div>
             <div className="text-sm text-[var(--color-text-secondary)] mb-2">Upcoming</div>
             <div className="space-y-3">
-              <MatchCard
-                time="Today 7:30 PM"
-                homeTeam="Merion Bocce Club"
-                awayTeam="Radnor Rollers"
-                location="Merion Cricket Club"
-                status="scheduled"
-                sport="bocce"
-                onClick={onViewMatch}
-              />
-              <MatchCard
-                time="Sat 2:00 PM"
-                homeTeam="Merion Bocce Club"
-                awayTeam="Wayne Bocce Society"
-                location="Merion Cricket Club"
-                status="scheduled"
-                sport="bocce"
-                onClick={onViewMatch}
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="text-sm text-[var(--color-text-secondary)] mb-2 mt-6">Recent</div>
-            <div className="space-y-3">
-              <MatchCard
-                time="Nov 13, 7:30 PM"
-                homeTeam="Haverford Bocce"
-                awayTeam="Merion Bocce Club"
-                location="Haverford Reserve"
-                status="completed"
-                sport="bocce"
-                score="2–4"
-                onClick={onViewMatch}
-              />
+              {roster.length === 0 && (
+                <EmptyState
+                  icon={Calendar}
+                  title="No upcoming matches"
+                  description="Schedule will appear once matches are scheduled."
+                />
+              )}
             </div>
           </div>
 

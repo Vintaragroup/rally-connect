@@ -2,7 +2,9 @@ import { TrendingUp, Users, ChevronRight, CalendarDays, BarChart3, ClipboardList
 import { MatchCard } from "./MatchCard";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiService } from "@/services/apiService";
+import { EmptyState } from "./EmptyState";
 
 interface HomeScreenProps {
   onViewMatch: () => void;
@@ -29,6 +31,74 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const { user } = useAuth();
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<number>>(new Set());
+  const [userTeams, setUserTeams] = useState<any[]>([]);
+  const [userMatches, setUserMatches] = useState<any[]>([]);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [standings, setStandings] = useState<any[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchUserTeams = async () => {
+      try {
+        const response = await apiService.get('/teams');
+        setUserTeams(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch user teams:', error);
+        setUserTeams([]);
+      }
+    };
+    fetchUserTeams();
+  }, []);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        setLoadingMatches(true);
+        const response = await apiService.get('/matches');
+        if (Array.isArray(response.data)) {
+          const upcomingMatches = response.data
+            .filter((m: any) => new Date(m.scheduledDate) > new Date())
+            .slice(0, 2);
+          setUserMatches(upcomingMatches);
+        }
+      } catch (error) {
+        console.error('Failed to fetch matches:', error);
+        setUserMatches([]);
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+    if (userTeams.length > 0) {
+      fetchMatches();
+    } else {
+      setLoadingMatches(false);
+    }
+  }, [userTeams]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoadingStats(true);
+        const response = await apiService.get('/standings');
+        if (Array.isArray(response.data)) {
+          const topTeams = response.data.slice(0, 4);
+          setStandings(topTeams);
+        }
+      } catch (error) {
+        console.error('Failed to fetch standings:', error);
+        setStandings([]);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    if (userTeams.length > 0) {
+      fetchStats();
+    } else {
+      setLoadingStats(false);
+    }
+  }, [userTeams]);
   
   const dismissNotification = (index: number) => {
     setDismissedNotifications(new Set([...dismissedNotifications, index]));
@@ -147,213 +217,211 @@ export function HomeScreen({
             </button>
           </div>
           <div className="space-y-3">
-            {[
-              { date: 'Tomorrow • 6:00 PM', opponent: 'vs Rival Team', court: 'Court 3', highlight: true },
-              { date: 'Dec 7 • 7:00 PM', opponent: 'vs Champions', court: 'Court 1', highlight: false },
-            ].map((match, idx) => (
-              <button
-                key={idx}
-                onClick={onViewMatch}
-                className={`w-full rounded-2xl p-4 transition-all duration-300 transform hover:scale-102 hover:shadow-md ${
-                  match.highlight 
-                    ? 'bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 shadow-sm' 
-                    : 'bg-[var(--color-bg-elevated)] border border-transparent shadow-sm hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-left">
-                    <CalendarDays className={`w-4 h-4 ${match.highlight ? 'text-blue-600' : 'text-[var(--color-text-secondary)]'}`} />
-                    <span className={`text-sm font-semibold ${match.highlight ? 'text-blue-900' : ''}`}>{match.date}</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                </div>
-                <div className="flex items-center justify-between text-left">
-                  <div>
-                    <p className="text-[var(--color-text-secondary)] text-xs">Your Team</p>
-                    <p className="font-semibold">{match.opponent}</p>
-                  </div>
-                  <div className="text-right text-sm text-[var(--color-text-secondary)] font-medium">
-                    {match.court}
-                  </div>
-                </div>
-              </button>
-            ))}
+            {userTeams.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="Join a team to see your schedule"
+                description="Once you're part of a team, your upcoming matches will appear here."
+              />
+            ) : loadingMatches ? (
+              <div className="text-center py-8 text-[var(--color-text-secondary)]">Loading matches...</div>
+            ) : userMatches.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="No upcoming matches"
+                description="Check back soon for scheduled games."
+              />
+            ) : (
+              userMatches.map((match, idx) => (
+                <MatchCard
+                  key={idx}
+                  time={new Date(match.scheduledDate).toLocaleDateString()}
+                  homeTeam={match.homeTeamName || 'TBD'}
+                  awayTeam={match.awayTeamName || 'TBD'}
+                  location={match.location || 'TBD'}
+                  sport={match.sport || 'bocce'}
+                  status="scheduled"
+                  onClick={onViewMatch}
+                />
+              ))
+            )}
           </div>
         </div>
 
         {/* Performance Dashboard - 2 Column Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-          
-          {/* Your Rating - Gradient Card */}
-          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl p-5 border border-yellow-100 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-200 to-amber-200 flex items-center justify-center">
-                <Star className="w-5 h-5 text-amber-700" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold">Your Rating</h3>
-                <p className="text-xs text-[var(--color-text-secondary)]">Multi-sport ranking</p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              {[
-                { sport: 'Bocce', rating: '1,245', trend: '+12', color: 'from-orange-400 to-amber-400' },
-                { sport: 'Pickleball', rating: '1,089', trend: '+5', color: 'from-yellow-400 to-orange-400' },
-              ].map((item, idx) => (
-                <div key={idx}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs font-medium text-[var(--color-text-secondary)]">{item.sport}</p>
-                    <span className="text-xs font-bold text-green-600">↑ {item.trend}</span>
-                  </div>
-                  <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600">
-                    {item.rating}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Season Stats - Gradient Card */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-100 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-200 to-emerald-200 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-green-700" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold">Season Stats</h3>
-                <p className="text-xs text-[var(--color-text-secondary)]">Current performance</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-[var(--color-text-secondary)]">Wins</p>
-                <p className="text-3xl font-bold text-green-600">8</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-[var(--color-text-secondary)]">Losses</p>
-                <p className="text-3xl font-bold text-red-500">3</p>
-              </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-8/12 transition-all duration-500"></div>
-              </div>
-              <div className="flex items-center justify-between pt-2">
-                <p className="text-sm font-medium text-[var(--color-text-secondary)]">Win Rate</p>
-                <p className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">73%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Division Standings */}
-        <div className="animate-fade-in">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold">Division Standings</h2>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">Your competitive position</p>
-          </div>
-          <div className="bg-[var(--color-bg-elevated)] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-            <table className="w-full text-sm">
-              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-[var(--color-border)]">
-                <tr>
-                  <th className="text-left py-3 px-4 font-semibold text-[var(--color-text-secondary)]">Rank</th>
-                  <th className="text-left py-3 px-4 font-semibold text-[var(--color-text-secondary)]">Team</th>
-                  <th className="text-center py-3 px-4 font-semibold text-[var(--color-text-secondary)]">W-L</th>
-                  <th className="text-right py-3 px-4 font-semibold text-[var(--color-text-secondary)]">Pts</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { rank: 1, name: 'Your Team', wl: '8-3', pts: 16, isYou: true },
-                  { rank: 2, name: 'Champions', wl: '7-4', pts: 14, isYou: false },
-                  { rank: 3, name: 'Rival Team', wl: '6-5', pts: 12, isYou: false },
-                  { rank: 4, name: 'Rising Stars', wl: '5-6', pts: 10, isYou: false },
-                ].map((team, idx) => (
-                  <tr 
-                    key={idx} 
-                    className={`border-b border-[var(--color-border)] last:border-b-0 transition-colors duration-200 ${
-                      team.isYou 
-                        ? 'bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100' 
-                        : 'hover:bg-[var(--color-bg)]'
-                    }`}
-                  >
-                    <td className="py-3 px-4 font-bold text-[var(--color-text-primary)]">{team.rank}</td>
-                    <td className={`py-3 px-4 font-semibold ${team.isYou ? 'text-[var(--color-primary)]' : ''}`}>
-                      {team.name} {team.isYou && '⭐'}
-                    </td>
-                    <td className="py-3 px-4 text-center font-medium">{team.wl}</td>
-                    <td className="py-3 px-4 text-right font-bold">{team.pts}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent Activity Feed */}
-        <div className="animate-fade-in">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold">Recent Activity</h2>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">Updates from your teams</p>
-          </div>
-          <div className="space-y-3">
-            {[
-              { icon: Trophy, color: 'from-green-400 to-emerald-400', title: 'Match Won', desc: 'Your Team defeated Rivals 11-8', time: '2 hours ago' },
-              { icon: Users, color: 'from-purple-400 to-pink-400', title: 'New Member Joined', desc: 'Alex Rodriguez joined Your Team', time: '5 hours ago' },
-              { icon: Award, color: 'from-yellow-400 to-orange-400', title: 'Achievement Unlocked', desc: 'You earned the "Hot Streak" badge (5 wins)', time: '1 day ago' },
-              { icon: Activity, color: 'from-blue-400 to-cyan-400', title: 'Rating Update', desc: 'Bocce rating increased to 1,245 (+12 pts)', time: '2 days ago' },
-            ].map((activity, idx) => (
-              <div 
-                key={idx}
-                className="bg-[var(--color-bg-elevated)] rounded-2xl p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer"
-              >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activity.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                  <activity.icon className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold">{activity.title}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{activity.desc}</p>
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-1.5 font-medium">{activity.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Team Snapshot */}
-        <div className="animate-fade-in">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold">Team Snapshot</h2>
-            <p className="text-xs text-[var(--color-text-secondary)] mt-1">Active team overview</p>
-          </div>
-          <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center text-lg">
-                  🔴
+        {userTeams.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+            
+            {/* Your Rating - Gradient Card */}
+            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl p-5 border border-yellow-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-200 to-amber-200 flex items-center justify-center">
+                  <Star className="w-5 h-5 text-amber-700" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold">Merion Bocce Club</h3>
-                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Division 2 • Winter 24-25</p>
+                  <h3 className="text-base font-bold">Your Rating</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Multi-sport ranking</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-[var(--color-text-secondary)]">Rating</p>
+                    <span className="text-xs font-bold text-green-600">Loading...</span>
+                  </div>
+                  <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600">
+                    —
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[var(--color-border)]">
-              <div>
-                <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Standing</p>
-                <p className="text-2xl font-bold">2nd <span className="text-xs text-[var(--color-text-secondary)]">of 8</span></p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Record</p>
-                <p className="text-2xl font-bold">7-2</p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <p className="text-sm text-[var(--color-text-secondary)]">Last match: <span className="font-semibold text-green-600">W 4-1</span></p>
+            {/* Season Stats - Gradient Card */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-100 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-200 to-emerald-200 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-green-700" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Season Stats</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)]">Current performance</p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-[var(--color-text-secondary)]">Wins</p>
+                  <p className="text-3xl font-bold text-green-600">—</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-[var(--color-text-secondary)]">Losses</p>
+                  <p className="text-3xl font-bold text-red-500">—</p>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-0 transition-all duration-500"></div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
+
+        {/* Division Standings */}
+        {userTeams.length > 0 ? (
+          <div className="animate-fade-in">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold">Division Standings</h2>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">Your competitive position</p>
+            </div>
+            {loadingStats ? (
+              <div className="text-center py-8 text-[var(--color-text-secondary)]">Loading standings...</div>
+            ) : standings.length === 0 ? (
+              <EmptyState
+                icon={Trophy}
+                title="No standings available"
+                description="Standings will appear once matches are scheduled."
+              />
+            ) : (
+              <div className="bg-[var(--color-bg-elevated)] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+                <table className="w-full text-sm">
+                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-[var(--color-border)]">
+                    <tr>
+                      <th className="text-left py-3 px-4 font-semibold text-[var(--color-text-secondary)]">Rank</th>
+                      <th className="text-left py-3 px-4 font-semibold text-[var(--color-text-secondary)]">Team</th>
+                      <th className="text-center py-3 px-4 font-semibold text-[var(--color-text-secondary)]">W-L</th>
+                      <th className="text-right py-3 px-4 font-semibold text-[var(--color-text-secondary)]">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {standings.map((team, idx) => (
+                      <tr 
+                        key={idx} 
+                        className={`border-b border-[var(--color-border)] last:border-b-0 transition-colors duration-200 hover:bg-[var(--color-bg)]`}
+                      >
+                        <td className="py-3 px-4 font-bold text-[var(--color-text-primary)]">{idx + 1}</td>
+                        <td className="py-3 px-4 font-semibold">{team.name || 'TBD'}</td>
+                        <td className="py-3 px-4 text-center font-medium">—</td>
+                        <td className="py-3 px-4 text-right font-bold">—</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        {/* Recent Activity Feed */}
+        {userTeams.length > 0 ? (
+          <div className="animate-fade-in">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold">Recent Activity</h2>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">Updates from your teams</p>
+            </div>
+            <div className="space-y-3">
+              {recentActivity.length === 0 ? (
+                <div className="text-center py-8 text-[var(--color-text-secondary)]">
+                  No recent activity yet
+                </div>
+              ) : (
+                recentActivity.map((activity, idx) => (
+                  <div 
+                    key={idx}
+                    className="bg-[var(--color-bg-elevated)] rounded-2xl p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer"
+                  >
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activity.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                      <activity.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold">{activity.title}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{activity.desc}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-1.5 font-medium">{activity.time}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Team Snapshot */}
+        {userTeams.length > 0 ? (
+          <div className="animate-fade-in">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold">Team Snapshot</h2>
+              <p className="text-xs text-[var(--color-text-secondary)] mt-1">Active team overview</p>
+            </div>
+            {userTeams.length > 0 && (
+              <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center text-lg">
+                      🔴
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold">{userTeams[0]?.name || 'Your Team'}</h3>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{userTeams[0]?.division || 'Division TBD'} • {userTeams[0]?.season || 'Season TBD'}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[var(--color-border)]">
+                  <div>
+                    <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Standing</p>
+                    <p className="text-2xl font-bold">— <span className="text-xs text-[var(--color-text-secondary)]">of —</span></p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Record</p>
+                    <p className="text-2xl font-bold">—</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  <p className="text-sm text-[var(--color-text-secondary)]">No recent matches yet</p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {/* Quick Actions */}
         <div className="animate-fade-in">

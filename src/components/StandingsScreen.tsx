@@ -174,7 +174,7 @@ export function StandingsScreen({ onBack, onViewTeam }: StandingsScreenProps) {
         <div className="space-y-2">
           {standings.map((team, index) => {
             const isTop3 = team.rank <= 3;
-            const isCurrentTeam = team.team === "Merion Bocce Club";
+            const isCurrentTeam = false; // Will be set to true when we fetch actual current user's team
 
             return (
               <button
