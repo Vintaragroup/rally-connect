@@ -1,10 +1,11 @@
-import { TrendingUp, Users, ChevronRight, CalendarDays, BarChart3, ClipboardList, UserPlus, Star, Trophy, Bell, Activity, Award, X } from "lucide-react";
+import { TrendingUp, Users, ChevronRight, CalendarDays, BarChart3, ClipboardList, UserPlus, Star, Trophy, Bell, Activity, Award, X, Key, Search } from "lucide-react";
 import { MatchCard } from "./MatchCard";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { apiService } from "../services/api";
 import { EmptyState } from "./EmptyState";
+import { JoinTeamScreen } from "./joining/JoinTeamScreen";
 
 interface HomeScreenProps {
   onViewMatch: () => void;
@@ -38,12 +39,17 @@ export function HomeScreen({
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [showJoinTeam, setShowJoinTeam] = useState(false);
 
   useEffect(() => {
     const fetchUserTeams = async () => {
       try {
         const response = await apiService.getTeams();
         setUserTeams(response.data || []);
+        // Close join modal if user now has teams
+        if ((response.data || []).length > 0) {
+          setShowJoinTeam(false);
+        }
       } catch (error) {
         console.error('Failed to fetch user teams:', error);
         setUserTeams([]);
@@ -176,6 +182,91 @@ export function HomeScreen({
           {dismissedNotifications.size === 0 && dismissedNotifications.size === 0 ? null : null}
         </div>
 
+        {/* No Teams - Show Joining Options */}
+        {userTeams.length === 0 && !showJoinTeam ? (
+          <div className="animate-fade-in">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Ready to Join a Team?</h2>
+                  <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">Get started by connecting with a team in your sports league</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-5">
+                <button
+                  onClick={() => setShowJoinTeam(true)}
+                  className="flex items-center gap-3 p-4 rounded-xl bg-white hover:bg-blue-50 border border-blue-100 transition-all duration-200 group text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
+                    <Key className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Have a Team Code?</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Enter your invitation code</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-blue-500 ml-auto flex-shrink-0" />
+                </button>
+                
+                <button
+                  onClick={() => setShowJoinTeam(true)}
+                  className="flex items-center gap-3 p-4 rounded-xl bg-white hover:bg-indigo-50 border border-indigo-100 transition-all duration-200 group text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-200 transition-colors">
+                    <Search className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Discover Teams</p>
+                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Find teams looking for players</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-indigo-500 ml-auto flex-shrink-0" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Join Team Screen - Modal View */}
+        {showJoinTeam && userTeams.length === 0 ? (
+          <div className="animate-fade-in bg-[var(--color-bg-elevated)] rounded-2xl p-6 shadow-sm border border-[var(--color-border)] mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Find Your Team</h2>
+              <button
+                onClick={() => setShowJoinTeam(false)}
+                className="p-2 hover:bg-[var(--color-bg)] rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-[var(--color-text-secondary)]" />
+              </button>
+            </div>
+            <JoinTeamScreen
+              userId={user?.id || ""}
+              leagueId={localStorage.getItem('leagueId') || "default"}
+              onComplete={(team) => {
+                if (team) {
+                  // Refresh teams list to show the new team
+                  const refetchTeams = async () => {
+                    try {
+                      const response = await apiService.getTeams();
+                      setUserTeams(response.data || []);
+                      setShowJoinTeam(false);
+                    } catch (error) {
+                      console.error('Failed to refresh teams:', error);
+                    }
+                  };
+                  refetchTeams();
+                } else {
+                  // Player chose to skip, close the form but keep join options visible
+                  setShowJoinTeam(false);
+                }
+              }}
+              onBack={() => setShowJoinTeam(false)}
+            />
+          </div>
+        ) : null}
+
         {/* Upcoming Matches - Primary */}
         <div className="animate-fade-in">
           <div className="flex items-center justify-between mb-4">
@@ -194,8 +285,8 @@ export function HomeScreen({
             {userTeams.length === 0 ? (
               <EmptyState
                 icon={CalendarDays}
-                title="Join a team to see your schedule"
-                description="Once you're part of a team, your upcoming matches will appear here."
+                title="No teams yet"
+                description="Complete joining a team above to see your schedule"
               />
             ) : loadingMatches ? (
               <div className="text-center py-8 text-[var(--color-text-secondary)]">Loading matches...</div>
