@@ -31,6 +31,8 @@ model User {
   practiceRequestsRcv     PracticeRequest[]     @relation("PracticeRequestReceiver")
   teamInviteRequests      TeamInviteRequest[]   @relation("TeamInviteRequests")
   coCapitainAssignments   CoCaptain[]
+  leagueMembers           LeagueMember[]        @relation("LeagueMembers")
+  teamJoinRequests        TeamJoinRequest[]     @relation("TeamJoinRequests")
 }
 
 model AssociationAdmin {
@@ -87,20 +89,26 @@ model Sport {
 }
 
 model League {
-  id              String             @id @default(cuid())
-  name            String
-  description     String?
-  sportId         String
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  admins          AssociationAdmin[] @relation("LeagueAdmins")
-  captainRequests CaptainRequest[]   @relation("CaptainRequests")
-  sport           Sport              @relation(fields: [sportId], references: [id])
-  scopedAdmins    LeagueAdmin[]      @relation("ScopedLeagueAdmins")
-  rules           LeagueRules?       @relation("LeagueRules")
-  matches         Match[]
-  seasons         Season[]
-  teams           Team[]
+  id                    String             @id @default(cuid())
+  name                  String
+  description           String?
+  sportId               String
+  isPubliclyVisible     Boolean            @default(false)
+  isEvent               Boolean            @default(false)
+  skillLevel            String?
+  startDate             DateTime?
+  endDate               DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  admins                AssociationAdmin[] @relation("LeagueAdmins")
+  captainRequests       CaptainRequest[]   @relation("CaptainRequests")
+  sport                 Sport              @relation(fields: [sportId], references: [id])
+  scopedAdmins          LeagueAdmin[]      @relation("ScopedLeagueAdmins")
+  rules                 LeagueRules?       @relation("LeagueRules")
+  matches               Match[]
+  seasons               Season[]
+  teams                 Team[]
+  leagueMembers         LeagueMember[]     @relation("LeagueMembers")
 
   @@unique([name, sportId])
 }
@@ -147,33 +155,37 @@ model Club {
 }
 
 model Team {
-  id              String           @id @default(cuid())
-  name            String
-  sportId         String
-  leagueId        String
-  divisionId      String
-  clubId          String?
-  description     String?
-  logo            String?
-  wins            Int              @default(0)
-  losses          Int              @default(0)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  captainRequests CaptainRequest[] @relation("CaptainRequests")
-  chatMessages    ChatMessage[]
-  awayMatches     Match[]          @relation("AwayTeamMatches")
-  homeMatches     Match[]          @relation("HomeTeamMatches")
-  standings       Standing[]
-  club            Club?            @relation(fields: [clubId], references: [id])
-  division        Division         @relation(fields: [divisionId], references: [id])
-  league          League           @relation(fields: [leagueId], references: [id])
-  sport           Sport            @relation(fields: [sportId], references: [id])
-  captains        TeamCaptain[]
-  invitations     TeamInvitation[]
-  members         TeamMember[]     @relation("TeamMembers")
-  players         TeamPlayer[]
-  coCaptains      CoCaptain[]      @relation("CoCaptains")
-  teamInviteReqs  TeamInviteRequest[] @relation("TeamInviteRequests")
+  id                String           @id @default(cuid())
+  name              String
+  sportId           String
+  leagueId          String
+  divisionId        String
+  clubId            String?
+  description       String?
+  logo              String?
+  wins              Int              @default(0)
+  losses            Int              @default(0)
+  minPlayersNeeded  Int?
+  isLookingForPlayers Boolean        @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  captainRequests   CaptainRequest[] @relation("CaptainRequests")
+  chatMessages      ChatMessage[]
+  awayMatches       Match[]          @relation("AwayTeamMatches")
+  homeMatches       Match[]          @relation("HomeTeamMatches")
+  standings         Standing[]
+  club              Club?            @relation(fields: [clubId], references: [id])
+  division          Division         @relation(fields: [divisionId], references: [id])
+  league            League           @relation(fields: [leagueId], references: [id])
+  sport             Sport            @relation(fields: [sportId], references: [id])
+  captains          TeamCaptain[]
+  invitations       TeamInvitation[]
+  members           TeamMember[]     @relation("TeamMembers")
+  players           TeamPlayer[]
+  coCaptains        CoCaptain[]      @relation("CoCaptains")
+  teamInviteReqs    TeamInviteRequest[] @relation("TeamInviteRequests")
+  joinRequests      TeamJoinRequest[] @relation("TeamJoinRequests")
+  invitationCodes   InvitationCode[] @relation("TeamInvitationCodes")
 }
 
 model Captain {
@@ -556,12 +568,14 @@ model InvitationCode {
   code            String   @unique @db.VarChar(12)
   organizationId  String
   sportId         String
+  teamId          String?
   createdBy       String   // userId
   createdAt       DateTime @default(now())
   expiresAt       DateTime?
   isUsed          Boolean  @default(false)
   usedBy          String[] // array of userId
   usageLimit      Int      @default(999999) // unlimited by default
+  team            Team?    @relation("TeamInvitationCodes", fields: [teamId], references: [id], onDelete: SetNull)
   
   @@index([code])
   @@index([organizationId, sportId])
@@ -640,6 +654,36 @@ model CoCaptain {
   @@index([teamId])
   @@index([playerId, status])
   @@map("CoCaptain")
+}
+
+model LeagueMember {
+  id              String   @id @default(cuid())
+  userId          String
+  leagueId        String
+  joinedAt        DateTime @default(now())
+  user            User     @relation("LeagueMembers", fields: [userId], references: [id], onDelete: Cascade)
+  league          League   @relation("LeagueMembers", fields: [leagueId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, leagueId])
+  @@index([leagueId])
+  @@map("LeagueMember")
+}
+
+model TeamJoinRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  teamId          String
+  message         String?
+  status          RequestStatus @default(PENDING)
+  requestedAt     DateTime @default(now())
+  respondedAt     DateTime?
+  user            User     @relation("TeamJoinRequests", fields: [userId], references: [id], onDelete: Cascade)
+  team            Team     @relation("TeamJoinRequests", fields: [teamId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, teamId])
+  @@index([teamId, status])
+  @@index([userId, status])
+  @@map("TeamJoinRequest")
 }
 
 enum UserRole {
