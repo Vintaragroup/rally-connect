@@ -220,17 +220,33 @@ export default function App() {
 
     // THEN: Route based on auth state
     if (isLoading || userLoading) {
+      console.log('🔄 Auth/User still loading...');
       setCurrentScreen("loading");
     } else if (isAuthenticated && user && currentUser) {
+      console.log('📍 Routing decision:', {
+        isAuthenticated,
+        user: user.email,
+        currentUser: {
+          id: currentUser.id,
+          email: currentUser.email,
+          onboardingCompleted: currentUser.onboardingCompleted,
+        },
+      });
       if (currentUser.onboardingCompleted) {
         // Returning user who completed onboarding - go to home
+        console.log('✅ User completed onboarding, routing to home');
         setCurrentScreen("home");
       } else {
         // Returning user or new user - go to onboarding
+        console.log('⏳ User needs onboarding, routing to onboarding');
         setCurrentScreen("onboarding");
       }
     } else {
       // Not authenticated - show welcome screen
+      console.log('🚫 Not authenticated, showing welcome');
+      console.log('  - isAuthenticated:', isAuthenticated);
+      console.log('  - user exists:', !!user);
+      console.log('  - currentUser exists:', !!currentUser);
       setCurrentScreen("welcome");
     }
   }, [isLoading, userLoading, isAuthenticated, user, currentUser]);

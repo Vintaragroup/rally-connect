@@ -74,6 +74,12 @@ export function useCurrentUser(): UseCurrentUserResult {
       if (response.ok) {
         const data = await response.json();
         
+        console.log('📊 Raw API response from /auth/me:', {
+          status: response.status,
+          data: data,
+          onboardingCompleted: data.onboardingCompleted,
+        });
+        
         // Transform backend response to CurrentUser
         const currentUser: CurrentUser = {
           id: authUser.id,
@@ -91,11 +97,12 @@ export function useCurrentUser(): UseCurrentUserResult {
         cacheTimestamp = now;
         setUser(currentUser);
       } else if (response.status === 404) {
-        console.warn('⚠️ User not found in backend');
+        console.warn('⚠️ User not found in backend (404)');
         setUser(null);
         setError('User not found');
       } else {
-        console.warn('⚠️ Failed to fetch user:', response.status);
+        const errorText = await response.text();
+        console.warn('⚠️ Failed to fetch user:', response.status, errorText);
         setError(`Failed to fetch user (${response.status})`);
       }
     } catch (err) {
