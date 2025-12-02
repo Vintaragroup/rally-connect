@@ -172,34 +172,8 @@ export function HomeScreen({
 
         {/* Notifications Banner - Compact & Dismissible */}
         <div className="space-y-2 animate-fade-in">
-          {[
-            { type: 'blue', title: 'Waitlist Approved', message: 'You\'ve been approved for "Thursday Night Bocce"' },
-            { type: 'amber', title: 'Team Announcement', message: 'Practice moved to 7:00 PM this Sunday' },
-          ].filter((_, idx) => !dismissedNotifications.has(idx)).map((notification, idx) => {
-            const colorClasses = notification.type === 'blue' 
-              ? 'bg-blue-50 border-blue-200 text-blue-900'
-              : 'bg-amber-50 border-amber-200 text-amber-900';
-            const iconColor = notification.type === 'blue' ? 'text-blue-600' : 'text-amber-600';
-            
-            return (
-              <div key={idx} className={`${colorClasses} border-l-4 rounded-lg p-3 flex items-start gap-3 shadow-sm group hover:shadow-md transition-all duration-200`}>
-                <div className={`w-8 h-8 rounded-full ${notification.type === 'blue' ? 'bg-blue-100' : 'bg-amber-100'} flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                  <Bell className={`w-4 h-4 ${iconColor}`} aria-hidden="true" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">{notification.title}</p>
-                  <p className={`text-xs ${notification.type === 'blue' ? 'text-blue-800' : 'text-amber-800'} mt-0.5`}>{notification.message}</p>
-                </div>
-                <button 
-                  onClick={() => dismissNotification(idx)}
-                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-white rounded-lg"
-                  aria-label={`Dismiss notification: ${notification.title}`}
-                >
-                  <X className="w-4 h-4" aria-hidden="true" />
-                </button>
-              </div>
-            );
-          })}
+          {/* Notifications will be fetched from API - placeholder for now */}
+          {dismissedNotifications.size === 0 && dismissedNotifications.size === 0 ? null : null}
         </div>
 
         {/* Upcoming Matches - Primary */}
@@ -383,47 +357,45 @@ export function HomeScreen({
         ) : null}
 
         {/* Team Snapshot */}
-        {userTeams.length > 0 ? (
+        {userTeams.length > 0 && userTeams[0] ? (
           <div className="animate-fade-in">
             <div className="mb-4">
               <h2 className="text-xl font-bold">Team Snapshot</h2>
               <p className="text-xs text-[var(--color-text-secondary)] mt-1">Active team overview</p>
             </div>
-            {userTeams.length > 0 && (
-              <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center text-lg">
-                      🔴
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold">{userTeams[0]?.name || 'Your Team'}</h3>
-                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
-                        {typeof userTeams[0]?.division === 'object' ? userTeams[0]?.division?.name : userTeams[0]?.division || 'Division TBD'} 
-                        • 
-                        {typeof userTeams[0]?.season === 'object' ? userTeams[0]?.season?.name : userTeams[0]?.season || 'Season TBD'}
-                      </p>
-                    </div>
+            <div className="bg-[var(--color-bg-elevated)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center text-lg">
+                    🔴
                   </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[var(--color-border)]">
                   <div>
-                    <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Standing</p>
-                    <p className="text-2xl font-bold">— <span className="text-xs text-[var(--color-text-secondary)]">of —</span></p>
+                    <h3 className="text-base font-bold">{userTeams[0]?.name || 'Your Team'}</h3>
+                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                      {typeof userTeams[0]?.division === 'object' ? userTeams[0]?.division?.name : userTeams[0]?.division || 'Division TBD'} 
+                      • 
+                      {typeof userTeams[0]?.season === 'object' ? userTeams[0]?.season?.name : userTeams[0]?.season || 'Season TBD'}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Record</p>
-                    <p className="text-2xl font-bold">—</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                  <p className="text-sm text-[var(--color-text-secondary)]">No recent matches yet</p>
                 </div>
               </div>
-            )}
+              
+              <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-[var(--color-border)]">
+                <div>
+                  <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Standing</p>
+                  <p className="text-2xl font-bold">— <span className="text-xs text-[var(--color-text-secondary)]">of —</span></p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-[var(--color-text-secondary)] font-medium mb-1">Record</p>
+                  <p className="text-2xl font-bold">—</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                <p className="text-sm text-[var(--color-text-secondary)]">No recent matches yet</p>
+              </div>
+            </div>
           </div>
         ) : null}
 
