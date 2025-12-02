@@ -71,4 +71,88 @@ export class TeamsController {
       expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
     });
   }
+
+  /**
+   * POST /teams/:teamId/request-join
+   * Request to join a team (pending captain approval)
+   * 
+   * @param teamId - Team ID
+   * @param userId - User ID requesting
+   * @param message - Optional message to captain
+   * @returns { requestId, teamName, status, success }
+   */
+  @Post(':teamId/request-join')
+  async requestJoinTeam(
+    @Param('teamId') teamId: string,
+    @Body() body: { userId: string; message?: string }
+  ) {
+    if (!teamId || !body.userId) {
+      throw new BadRequestException('teamId and userId are required');
+    }
+
+    return this.teamsService.requestJoinTeam({
+      userId: body.userId,
+      teamId,
+      message: body.message,
+    });
+  }
+
+  /**
+   * GET /teams/:teamId/pending-joins
+   * Get pending join requests for a team (admin/captain only)
+   * 
+   * @param teamId - Team ID
+   * @returns Array of pending requests with user details
+   */
+  @Get(':teamId/pending-joins')
+  async getPendingJoinRequests(@Param('teamId') teamId: string) {
+    if (!teamId) {
+      throw new BadRequestException('teamId is required');
+    }
+
+    return this.teamsService.getPendingJoinRequests(teamId);
+  }
+
+  /**
+   * POST /teams/:teamId/approve-join/:requestId
+   * Approve a join request (admin/captain only)
+   * 
+   * @param teamId - Team ID
+   * @param requestId - Request ID
+   * @returns { teamId, leagueId, userId, success }
+   */
+  @Post(':teamId/approve-join/:requestId')
+  async approveJoinRequest(
+    @Param('teamId') teamId: string,
+    @Param('requestId') requestId: string
+  ) {
+    if (!teamId || !requestId) {
+      throw new BadRequestException('teamId and requestId are required');
+    }
+
+    return this.teamsService.approveJoinRequest({
+      requestId,
+      teamId,
+    });
+  }
+
+  /**
+   * POST /teams/:teamId/decline-join/:requestId
+   * Decline a join request (admin/captain only)
+   * 
+   * @param teamId - Team ID
+   * @param requestId - Request ID
+   * @returns { success }
+   */
+  @Post(':teamId/decline-join/:requestId')
+  async declineJoinRequest(
+    @Param('teamId') teamId: string,
+    @Param('requestId') requestId: string
+  ) {
+    if (!teamId || !requestId) {
+      throw new BadRequestException('teamId and requestId are required');
+    }
+
+    return this.teamsService.declineJoinRequest(requestId);
+  }
 }
