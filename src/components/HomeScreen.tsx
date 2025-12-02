@@ -3,7 +3,7 @@ import { MatchCard } from "./MatchCard";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
-import { apiService } from "@/services/apiService";
+import { apiService } from "../services/api";
 import { EmptyState } from "./EmptyState";
 
 interface HomeScreenProps {
@@ -42,7 +42,7 @@ export function HomeScreen({
   useEffect(() => {
     const fetchUserTeams = async () => {
       try {
-        const response = await apiService.get('/teams');
+        const response = await apiService.getTeams();
         setUserTeams(response.data || []);
       } catch (error) {
         console.error('Failed to fetch user teams:', error);
@@ -56,7 +56,7 @@ export function HomeScreen({
     const fetchMatches = async () => {
       try {
         setLoadingMatches(true);
-        const response = await apiService.get('/matches');
+        const response = await apiService.getMatches();
         if (Array.isArray(response.data)) {
           const upcomingMatches = response.data
             .filter((m: any) => new Date(m.scheduledDate) > new Date())
@@ -81,7 +81,7 @@ export function HomeScreen({
     const fetchStats = async () => {
       try {
         setLoadingStats(true);
-        const response = await apiService.get('/standings');
+        const response = await apiService.getStandings();
         if (Array.isArray(response.data)) {
           const topTeams = response.data.slice(0, 4);
           setStandings(topTeams);
