@@ -398,7 +398,11 @@ export function HomeScreen({
                     </div>
                     <div>
                       <h3 className="text-base font-bold">{userTeams[0]?.name || 'Your Team'}</h3>
-                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{userTeams[0]?.division || 'Division TBD'} • {userTeams[0]?.season || 'Season TBD'}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                        {typeof userTeams[0]?.division === 'object' ? userTeams[0]?.division?.name : userTeams[0]?.division || 'Division TBD'} 
+                        • 
+                        {typeof userTeams[0]?.season === 'object' ? userTeams[0]?.season?.name : userTeams[0]?.season || 'Season TBD'}
+                      </p>
                     </div>
                   </div>
                 </div>
