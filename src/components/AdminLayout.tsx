@@ -9,7 +9,7 @@ import { Players } from '../pages/admin/Players';
 import { Schedule } from '../pages/admin/Schedule';
 import { Settings } from '../pages/admin/Settings';
 import { TopBar } from './admin/TopBar';
-import { adminStats } from '../data/adminMockData';
+import { apiService } from '../services/api';
 
 interface AdminLayoutProps {
   onExit?: () => void;
@@ -18,6 +18,23 @@ interface AdminLayoutProps {
 export function AdminLayout({ onExit }: AdminLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [pendingCaptainRequests, setPendingCaptainRequests] = useState(0);
+
+  useEffect(() => {
+    const fetchPendingRequests = async () => {
+      try {
+        const response = await apiService.getCaptainRequests();
+        if (response.data) {
+          const pendingCount = (response.data as any[]).filter((r: any) => r.status === 'pending').length;
+          setPendingCaptainRequests(pendingCount);
+        }
+      } catch (err) {
+        console.error('Error fetching captain requests:', err);
+      }
+    };
+
+    fetchPendingRequests();
+  }, []);
 
   const handleMenuToggle = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -92,7 +109,7 @@ export function AdminLayout({ onExit }: AdminLayoutProps) {
         {/* TopBar with menu toggle - Always visible */}
         <TopBar 
           title={getPageTitle()}
-          notificationCount={adminStats.pendingCaptainRequests}
+          notificationCount={pendingCaptainRequests}
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
         />
@@ -133,7 +150,7 @@ function AdminSidebarContent({
 }: AdminSidebarContentProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'captain-requests', label: 'Captain Requests', icon: '✓', badge: adminStats.pendingCaptainRequests },
+    { id: 'captain-requests', label: 'Captain Requests', icon: '✓', badge: pendingCaptainRequests },
     { id: 'leagues', label: 'Leagues', icon: '🏆' },
     { id: 'seasons', label: 'Seasons', icon: '📅' },
     { id: 'divisions', label: 'Divisions', icon: '⊞' },

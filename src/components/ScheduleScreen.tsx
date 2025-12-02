@@ -70,11 +70,7 @@ export function ScheduleScreen({
   
   // Admin panel state
   const [adminTab, setAdminTab] = useState<"requests" | "manage">("requests");
-  const [adminRequests, setAdminRequests] = useState<AdminRequest[]>([
-    { id: "1", type: "preference", dates: ["2025-11-27", "2025-11-28"], captainName: "Alex Chen", teamName: "Merion Bocce", status: "pending" },
-    { id: "2", type: "conflict", dates: ["2025-11-30"], reason: "Team event", captainName: "Maria Garcia", teamName: "Radnor Rollers", status: "pending" },
-    { id: "3", type: "preference", dates: ["2025-12-01", "2025-12-02", "2025-12-03"], captainName: "James Wilson", teamName: "Penn Valley", status: "pending" },
-  ]);
+  const [adminRequests, setAdminRequests] = useState<AdminRequest[]>([]);
   const [showCreateMatchModal, setShowCreateMatchModal] = useState(false);
   const [newMatch, setNewMatch] = useState({
     date: "",
