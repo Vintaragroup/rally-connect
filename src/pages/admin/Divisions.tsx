@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FilterBar } from '../../components/admin/FilterBar';
 import { DataTable, Column } from '../../components/admin/DataTable';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { Modal } from '../../components/admin/Modal';
 import { Division } from '../../types/admin';
-import { divisions as initialDivisions } from '../../data/adminMockData';
 import { Plus } from 'lucide-react';
 
 interface DivisionsProps {
@@ -13,11 +12,12 @@ interface DivisionsProps {
 }
 
 export function Divisions({ onMenuToggle, isMobileMenuOpen }: DivisionsProps) {
-  const [divisions, setDivisions] = useState(initialDivisions);
+  const [divisions, setDivisions] = useState<Division[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [leagueFilter, setLeagueFilter] = useState('');
   const [seasonFilter, setSeasonFilter] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // New division form
   const [newDivision, setNewDivision] = useState({
@@ -30,7 +30,25 @@ export function Divisions({ onMenuToggle, isMobileMenuOpen }: DivisionsProps) {
     maxTeams: '',
   });
 
-  const handleCreateDivision = () => {
+  useEffect(() => {
+    const fetchDivisions = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${apiUrl}/divisions`);
+        const data = response.ok ? await response.json() : [];
+        setDivisions(data);
+      } catch (err) {
+        console.error('Error fetching divisions:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDivisions();
+  }, []);
+
+  const handleCreateDivision = async () => {
+    // TODO: Call API to create division
     const division: Division = {
       id: `d${divisions.length + 1}`,
       name: newDivision.name,

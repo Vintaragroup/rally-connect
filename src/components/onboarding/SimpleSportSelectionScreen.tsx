@@ -26,15 +26,28 @@ export function SimpleSportSelectionScreen({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Fetch sports for this organization from backend
-    // For now, mock data
-    const mockSports: Sport[] = [
-      { id: 'sport-1', name: 'Bocce', icon: '🎱', description: 'Italian bowling game' },
-      { id: 'sport-2', name: 'Pickleball', icon: '🏓', description: 'Paddle sport' },
-      { id: 'sport-3', name: 'Padel', icon: '🎾', description: 'Hybrid racquet sport' },
-    ];
-    setSports(mockSports);
-    setIsLoading(false);
+    const fetchSports = async () => {
+      try {
+        setIsLoading(true);
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${apiUrl}/sports`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch sports');
+        }
+        
+        const data = await response.json();
+        setSports(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching sports:', err);
+        setError('Failed to load sports. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSports();
   }, [organizationId]);
 
   const handleToggleSport = (sportId: string) => {

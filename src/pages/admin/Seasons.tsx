@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FilterBar } from '../../components/admin/FilterBar';
 import { DataTable, Column } from '../../components/admin/DataTable';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { Modal } from '../../components/admin/Modal';
 import { Season } from '../../types/admin';
-import { seasons as initialSeasons } from '../../data/adminMockData';
 import { Plus } from 'lucide-react';
 
 interface SeasonsProps {
@@ -13,12 +12,13 @@ interface SeasonsProps {
 }
 
 export function Seasons({ onMenuToggle, isMobileMenuOpen }: SeasonsProps) {
-  const [seasons, setSeasons] = useState(initialSeasons);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [leagueFilter, setLeagueFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // New season form
   const [newSeason, setNewSeason] = useState({
@@ -29,7 +29,25 @@ export function Seasons({ onMenuToggle, isMobileMenuOpen }: SeasonsProps) {
     endDate: '',
   });
 
-  const handleCreateSeason = () => {
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${apiUrl}/seasons`);
+        const data = response.ok ? await response.json() : [];
+        setSeasons(data);
+      } catch (err) {
+        console.error('Error fetching seasons:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSeasons();
+  }, []);
+
+  const handleCreateSeason = async () => {
+    // TODO: Call API to create season
     const season: Season = {
       id: `s${seasons.length + 1}`,
       name: newSeason.name,

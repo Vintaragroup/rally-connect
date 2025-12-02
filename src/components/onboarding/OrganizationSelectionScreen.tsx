@@ -23,27 +23,28 @@ export function OrganizationSelectionScreen({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Fetch organizations from backend
-    // For now, mock data
-    const mockOrgs: Organization[] = [
-      {
-        id: 'org-1',
-        name: 'Merion Bocce Club',
-        description: 'Premier bocce club with multiple teams',
-      },
-      {
-        id: 'org-2',
-        name: 'Riverside Pickleball Association',
-        description: 'Community pickleball league',
-      },
-      {
-        id: 'org-3',
-        name: 'Downtown Padel Club',
-        description: 'Professional padel facility',
-      },
-    ];
-    setOrganizations(mockOrgs);
-    setIsLoading(false);
+    const fetchOrganizations = async () => {
+      try {
+        setIsLoading(true);
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${apiUrl}/leagues`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch organizations');
+        }
+        
+        const data = await response.json();
+        setOrganizations(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching organizations:', err);
+        setError('Failed to load organizations. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrganizations();
   }, []);
 
   const handleSubmit = () => {

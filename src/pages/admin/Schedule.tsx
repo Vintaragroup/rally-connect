@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FilterBar } from '../../components/admin/FilterBar';
 import { DataTable, Column } from '../../components/admin/DataTable';
 import { StatusBadge } from '../../components/admin/StatusBadge';
 import { Modal } from '../../components/admin/Modal';
 import { Match } from '../../types/admin';
-import { adminMatches, adminTeams } from '../../data/adminMockData';
 import { Plus, MapPin } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
@@ -17,6 +16,9 @@ export function Schedule({ onMenuToggle, isMobileMenuOpen }: ScheduleProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [leagueFilter, setLeagueFilter] = useState('');
+  const [adminMatches, setAdminMatches] = useState<Match[]>([]);
+  const [adminTeams, setAdminTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // New match form
   const [newMatch, setNewMatch] = useState({
@@ -26,6 +28,31 @@ export function Schedule({ onMenuToggle, isMobileMenuOpen }: ScheduleProps) {
     time: '',
     location: '',
   });
+
+  useEffect(() => {
+    const fetchScheduleData = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        
+        // Fetch matches
+        const matchesRes = await fetch(`${apiUrl}/matches`);
+        const matchesData = matchesRes.ok ? await matchesRes.json() : [];
+        
+        // Fetch teams
+        const teamsRes = await fetch(`${apiUrl}/teams`);
+        const teamsData = teamsRes.ok ? await teamsRes.json() : [];
+        
+        setAdminMatches(matchesData);
+        setAdminTeams(teamsData);
+      } catch (err) {
+        console.error('Error fetching schedule data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScheduleData();
+  }, []);
 
   const handleScheduleMatch = () => {
     const homeTeam = adminTeams.find(t => t.id === newMatch.homeTeamId);

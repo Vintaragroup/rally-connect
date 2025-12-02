@@ -1,9 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StatCard } from '../../components/admin/StatCard';
 import { QuickActionCard } from '../../components/admin/QuickActionCard';
 import { ActivityItem } from '../../components/admin/ActivityItem';
-import { adminStats, recentActivities } from '../../data/adminMockData';
 import { Users, UserCircle, Trophy, Calendar, UserCheck, Plus, BarChart3 } from 'lucide-react';
+
+interface AdminStats {
+  totalPlayers: number;
+  totalTeams: number;
+  totalLeagues: number;
+  totalSeasons: number;
+  pendingCaptainRequests: number;
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: Date;
+  actionBy?: string;
+}
 
 interface DashboardProps {
   onMenuToggle?: () => void;
@@ -12,6 +28,53 @@ interface DashboardProps {
 
 export function Dashboard({ onMenuToggle, isMobileMenuOpen }: DashboardProps) {
   const [showCreateModal, setShowCreateModal] = useState<string | null>(null);
+  const [adminStats, setAdminStats] = useState<AdminStats>({
+    totalPlayers: 0,
+    totalTeams: 0,
+    totalLeagues: 0,
+    totalSeasons: 0,
+    pendingCaptainRequests: 0,
+  });
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        
+        // Fetch leagues
+        const leaguesRes = await fetch(`${apiUrl}/leagues`);
+        const leaguesData = leaguesRes.ok ? await leaguesRes.json() : [];
+        
+        // Fetch teams
+        const teamsRes = await fetch(`${apiUrl}/teams`);
+        const teamsData = teamsRes.ok ? await teamsRes.json() : [];
+        
+        // Fetch players
+        const playersRes = await fetch(`${apiUrl}/players`);
+        const playersData = playersRes.ok ? await playersRes.json() : [];
+        
+        // Update stats
+        setAdminStats({
+          totalPlayers: playersData.length || 0,
+          totalTeams: teamsData.length || 0,
+          totalLeagues: leaguesData.length || 0,
+          totalSeasons: 0, // TODO: Add seasons endpoint
+          pendingCaptainRequests: 0, // TODO: Add captain requests count endpoint
+        });
+        
+        // For now, we'll keep recentActivities empty until we have an activity log endpoint
+        setRecentActivities([]);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50 min-w-0">
