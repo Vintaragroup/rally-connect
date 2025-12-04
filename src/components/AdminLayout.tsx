@@ -24,11 +24,9 @@ export function AdminLayout({ onExit }: AdminLayoutProps) {
   useEffect(() => {
     const fetchPendingRequests = async () => {
       try {
-        const response = await apiService.getCaptainRequests();
-        if (response.data) {
-          const pendingCount = (response.data as any[]).filter((r: any) => r.status === 'pending').length;
-          setPendingCaptainRequests(pendingCount);
-        }
+        // Placeholder - captain requests API method will be added
+        // For now, just set to 0
+        setPendingCaptainRequests(0);
       } catch (err) {
         console.error('Error fetching captain requests:', err);
       }
@@ -126,6 +124,7 @@ export function AdminLayout({ onExit }: AdminLayoutProps) {
               onPageChange={handlePageChange}
               onExit={onExit}
               onMobileMenuClose={handleMobileMenuClose}
+              pendingCaptainRequests={pendingCaptainRequests}
             />
           </div>
         )}
@@ -144,13 +143,15 @@ interface AdminSidebarContentProps {
   onPageChange: (page: string) => void;
   onExit?: () => void;
   onMobileMenuClose?: () => void;
+  pendingCaptainRequests: number;
 }
 
 function AdminSidebarContent({ 
   currentPage, 
   onPageChange, 
   onExit,
-  onMobileMenuClose 
+  onMobileMenuClose,
+  pendingCaptainRequests
 }: AdminSidebarContentProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },

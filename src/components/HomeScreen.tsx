@@ -40,6 +40,7 @@ export function HomeScreen({
   const [loadingStats, setLoadingStats] = useState(true);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [showJoinTeam, setShowJoinTeam] = useState(false);
+  const [leagueId, setLeagueId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserTeams = async () => {
@@ -71,6 +72,30 @@ export function HomeScreen({
     };
     fetchUserTeams();
   }, [user?.id]);
+
+  useEffect(() => {
+    const fetchLeagues = async () => {
+      try {
+        const response = await apiService.getLeagues();
+        const leagues = response.data || [];
+        if (leagues.length > 0) {
+          // Use the first league
+          setLeagueId(leagues[0].id);
+          console.log('📍 HomeScreen: Found league for team discovery:', {
+            leagueId: leagues[0].id,
+            leagueName: leagues[0].name
+          });
+        } else {
+          console.warn('⚠️ HomeScreen: No leagues found for user');
+        }
+      } catch (error) {
+        console.error('Failed to fetch leagues:', error);
+      }
+    };
+    if (userTeams.length === 0) {
+      fetchLeagues();
+    }
+  }, [userTeams.length]);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -257,7 +282,7 @@ export function HomeScreen({
             </div>
             <JoinTeamScreen
               userId={user?.id || ""}
-              leagueId={localStorage.getItem('leagueId') || "default"}
+              leagueId={leagueId || "default"}
               onComplete={(team) => {
                 if (team) {
                   // Refresh teams list to show the new team

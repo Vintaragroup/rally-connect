@@ -1,10 +1,12 @@
 import { Bell, Check, X, Calendar, Users, Trophy, AlertCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NotificationsScreenProps {
   onBack: () => void;
+  onUnreadCountChange?: (count: number) => void;
 }
 
 interface Notification {
@@ -17,63 +19,45 @@ interface Notification {
   actionable?: boolean;
 }
 
-export function NotificationsScreen({ onBack }: NotificationsScreenProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "n1",
-      type: "alert",
-      title: "Spot Available!",
-      message: "A spot opened for Division 3, Pickleball. Join now before it fills up!",
-      time: "5 min ago",
-      read: false,
-      actionable: true,
-    },
-    {
-      id: "n2",
-      type: "match",
-      title: "Match Reminder",
-      message: "Your match vs Radnor Rollers starts in 2 hours at Merion Cricket Club.",
-      time: "2 hours ago",
-      read: false,
-      actionable: false,
-    },
-    {
-      id: "n3",
-      type: "team",
-      title: "Lineup Confirmed",
-      message: "Your captain has set the lineup for tonight's match. You're in position 2.",
-      time: "4 hours ago",
-      read: false,
-      actionable: false,
-    },
-    {
-      id: "n4",
-      type: "achievement",
-      title: "New Achievement! 🏆",
-      message: "You've won 10 matches this season! Keep up the great work.",
-      time: "1 day ago",
-      read: true,
-      actionable: false,
-    },
-    {
-      id: "n5",
-      type: "team",
-      title: "Availability Request",
-      message: "Your captain is requesting availability for next week's matches.",
-      time: "1 day ago",
-      read: true,
-      actionable: true,
-    },
-    {
-      id: "n6",
-      type: "match",
-      title: "Match Result",
-      message: "Merion Bocce Club defeated Wayne Warriors 5-3. Great job team!",
-      time: "2 days ago",
-      read: true,
-      actionable: false,
-    },
-  ]);
+export function NotificationsScreen({ onBack, onUnreadCountChange }: NotificationsScreenProps) {
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch notifications from API when component mounts
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const response = await fetch(`${apiUrl}/notifications?userId=${user?.id}`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch notifications');
+        }
+
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        setNotifications([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchNotifications();
+    }
+  }, [user?.id]);
+
+  // Notify parent component when unread count changes
+  useEffect(() => {
+    const unreadCount = notifications.filter(n => !n.read).length;
+    onUnreadCountChange?.(unreadCount);
+  }, [notifications, onUnreadCountChange]);
 
   const handleMarkAsRead = (id: string) => {
     setNotifications(notifications.map(n => 

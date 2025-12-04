@@ -31,6 +31,7 @@ interface MoreScreenProps {
   onSignOut?: () => void;
   isCaptain?: boolean;
   isAssociationAdmin?: boolean;
+  notificationCount?: number;
   onManageRoster?: () => void;
   onSetLineups?: () => void;
   onViewAnalytics?: () => void;
@@ -56,6 +57,7 @@ export function MoreScreen({
   onSignOut, 
   isCaptain = false,
   isAssociationAdmin = false,
+  notificationCount = 0,
   onManageRoster, 
   onSetLineups, 
   onViewAnalytics,
@@ -135,7 +137,7 @@ export function MoreScreen({
       title: "Account",
       items: [
         { icon: User, label: "Edit Profile", badge: null },
-        { icon: Bell, label: "Notifications", badge: "3" },
+        { icon: Bell, label: "Notifications", badge: notificationCount > 0 ? notificationCount.toString() : null },
         { icon: Settings, label: "Preferences", badge: null },
       ],
     },

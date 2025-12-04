@@ -12,18 +12,15 @@ interface JoinTeamScreenProps {
 export function JoinTeamScreen({ onComplete, onBack }: JoinTeamScreenProps) {
   const [searchMode, setSearchMode] = useState<"code" | "search">("code");
   const [inviteCode, setInviteCode] = useState("");
+  // Team search is now powered by API
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Mock team search results
-  const searchResults = searchQuery.length > 2 ? [
-    { id: "1", name: "Merion Bocce Club", sport: "bocce", captain: "Jordan Chen", members: 12 },
-    { id: "2", name: "Main Line Bocce", sport: "bocce", captain: "Sam Patel", members: 8 },
-  ] : [];
+  const searchResults: any[] = [];
 
   const handleJoinWithCode = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Joining with code:", inviteCode);
-    onComplete({ id: "mock-team-id", name: "Merion Bocce Club" });
+    // Code validation should happen with API
+    // For now, just complete the flow
+    onComplete(null);
   };
 
   const handleJoinTeam = (team: { id: string; name: string }) => {

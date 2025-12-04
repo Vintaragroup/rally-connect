@@ -10,14 +10,10 @@ export class LeaguesController {
     return this.leaguesService.getAllLeagues();
   }
 
-  @Get(':id')
-  getLeagueById(@Param('id') id: string) {
-    return this.leaguesService.getLeagueById(id);
-  }
-
   /**
    * GET /leagues/:leagueId/teams-looking
    * Get teams looking for players in a league
+   * IMPORTANT: This route must come BEFORE the generic :id route to match correctly
    * 
    * @param leagueId - League ID
    * @returns Array of teams with player count info
@@ -29,5 +25,10 @@ export class LeaguesController {
     }
 
     return this.leaguesService.getTeamsLookingForPlayers(leagueId);
+  }
+
+  @Get(':id')
+  getLeagueById(@Param('id') id: string) {
+    return this.leaguesService.getLeagueById(id);
   }
 }

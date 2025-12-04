@@ -137,10 +137,6 @@ export class InvitationCodeService {
         where: {
           organizationId,
         },
-        include: {
-          // Note: Prisma doesn't support dynamic relation includes,
-          // so we'll add related org/sport names manually
-        },
       });
 
       return codes;

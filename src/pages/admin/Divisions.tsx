@@ -35,10 +35,18 @@ export function Divisions({ onMenuToggle, isMobileMenuOpen }: DivisionsProps) {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '/api';
         const response = await fetch(`${apiUrl}/divisions`);
-        const data = response.ok ? await response.json() : [];
-        setDivisions(data);
+        if (response.status === 404) {
+          // Endpoint doesn't exist yet, show empty state
+          setDivisions([]);
+        } else if (response.ok) {
+          const data = await response.json();
+          setDivisions(Array.isArray(data) ? data : []);
+        } else {
+          setDivisions([]);
+        }
       } catch (err) {
         console.error('Error fetching divisions:', err);
+        setDivisions([]);
       } finally {
         setLoading(false);
       }

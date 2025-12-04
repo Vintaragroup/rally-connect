@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Trophy, Calendar, MessageSquare, ChevronRight, Users } from "lucide-react";
+import { Trophy, Calendar, MessageSquare, ChevronRight, Users, Settings, Clock, Share2 } from "lucide-react";
 import { SportIcon } from "./SportIcon";
 import { Button } from "./ui/button";
 import { MatchCard } from "./MatchCard";
 import { EmptyState } from "./EmptyState";
+import { TeamSettingsModal } from "./TeamSettingsModal";
+import { PendingJoinRequests } from "./PendingJoinRequests";
+import TeamInvitationModal from "./TeamInvitationModal";
 
 interface TeamDetailScreenProps {
   onViewMatch: () => void;
@@ -11,10 +14,48 @@ interface TeamDetailScreenProps {
   onViewTeamReport?: () => void;
   isCaptain?: boolean;
   isAssociationAdmin?: boolean;
+  teamId?: string;
+  userId?: string;
+  currentPlayerCount?: number;
+  minPlayersNeeded?: number;
+  isLookingForPlayers?: boolean;
+  teamName?: string;
 }
 
-export function TeamDetailScreen({ onViewMatch, onViewTeamChat, onViewTeamReport, isCaptain = false, isAssociationAdmin = false }: TeamDetailScreenProps) {
+export function TeamDetailScreen({ 
+  onViewMatch, 
+  onViewTeamChat, 
+  onViewTeamReport, 
+  isCaptain = false, 
+  isAssociationAdmin = false,
+  teamId: propTeamId,
+  userId: propUserId,
+  currentPlayerCount: propCurrentPlayerCount,
+  minPlayersNeeded: propMinPlayersNeeded,
+  isLookingForPlayers: propIsLookingForPlayers,
+  teamName: propTeamName
+}: TeamDetailScreenProps) {
   const [activeTab, setActiveTab] = useState<"roster" | "schedule" | "standings">("roster");
+  const [showTeamSettings, setShowTeamSettings] = useState(false);
+  const [showPendingRequests, setShowPendingRequests] = useState(false);
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+
+  // Use provided data or API calls - no fallback to hardcoded values
+  const teamId = propTeamId;
+  const userId = propUserId;
+  const currentPlayerCount = propCurrentPlayerCount ?? 0;
+  const minPlayersNeeded = propMinPlayersNeeded ?? 0;
+  const isLookingForPlayers = propIsLookingForPlayers ?? false;
+  const teamName = propTeamName || "Team";
+
+  // Show loading or empty state if no data provided
+  if (!teamId || !propTeamName) {
+    return (
+      <div className="pb-6 p-4 text-center">
+        <p className="text-[var(--color-text-secondary)]">No team data provided</p>
+      </div>
+    );
+  }
 
   const roster: any[] = [];
 
@@ -27,7 +68,7 @@ export function TeamDetailScreen({ onViewMatch, onViewTeamChat, onViewTeamReport
         <div className="flex items-start gap-3 mb-4">
           <SportIcon sport="bocce" size={48} />
           <div className="flex-1">
-            <h1 className="mb-1">Merion Bocce Club</h1>
+            <h1 className="mb-1">{teamName}</h1>
             <p className="text-[var(--color-text-secondary)] text-sm">
               Division 2 • Winter 24–25
             </p>
@@ -83,9 +124,31 @@ export function TeamDetailScreen({ onViewMatch, onViewTeamChat, onViewTeamReport
       {activeTab === "roster" && (
         <div className="p-4 space-y-3">
           {isCaptain && (
-            <Button className="w-full mb-2">
-              Manage Roster
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                className="w-full"
+                onClick={() => setShowTeamSettings(true)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Team Settings & Recruitment
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full border-[var(--color-border)]"
+                onClick={() => setShowPendingRequests(true)}
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Pending Join Requests
+              </Button>
+              <Button 
+                variant="outline"
+                className="w-full border-[var(--color-border)]"
+                onClick={() => setShowInvitationModal(true)}
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Generate Invitation Code
+              </Button>
+            </div>
           )}
           
           {roster.length === 0 ? (
@@ -220,6 +283,45 @@ export function TeamDetailScreen({ onViewMatch, onViewTeamChat, onViewTeamReport
           </div>
         </div>
       )}
+
+      {/* Team Settings Modal */}
+      {showTeamSettings && (
+        <TeamSettingsModal
+          teamId={teamId}
+          teamName={teamName}
+          currentPlayerCount={currentPlayerCount}
+          minPlayersNeeded={minPlayersNeeded}
+          isLookingForPlayers={isLookingForPlayers}
+          userId={userId}
+          onClose={() => setShowTeamSettings(false)}
+          onSuccess={() => {
+            // Refresh team data if needed
+            console.log("Team settings updated");
+          }}
+        />
+      )}
+
+      {/* Pending Join Requests Modal */}
+      {showPendingRequests && (
+        <PendingJoinRequests
+          teamId={teamId}
+          teamName={teamName}
+          onClose={() => setShowPendingRequests(false)}
+          onSuccess={() => {
+            // Refresh pending requests
+            console.log("Join request processed");
+          }}
+        />
+      )}
+
+      {/* Team Invitation Modal */}
+      <TeamInvitationModal
+        isOpen={showInvitationModal}
+        teamId={teamId}
+        teamName={teamName}
+        userId={userId || ''}
+        onClose={() => setShowInvitationModal(false)}
+      />
     </div>
   );
 }

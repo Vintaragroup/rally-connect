@@ -10,6 +10,7 @@ import { MatchesModule } from './modules/matches/matches.module';
 import { StandingsModule } from './modules/standings/standings.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AssociationAdminModule } from './modules/association-admin/association-admin.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AssociationAdminModule } from './modules/association-admin/association-
     StandingsModule,
     AuthModule,
     AssociationAdminModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

@@ -311,6 +311,13 @@ class ApiService {
       body: JSON.stringify({}),
     });
   }
+
+  async updateTeamLookingForPlayers(teamId: string, isLookingForPlayers: boolean, userId: string) {
+    return this.request(`/teams/${teamId}/looking-for-players`, {
+      method: 'POST',
+      body: JSON.stringify({ isLookingForPlayers, userId }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

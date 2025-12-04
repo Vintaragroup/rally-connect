@@ -483,6 +483,25 @@ export class TeamsService {
         throw new BadRequestException('User already has a pending request for this team');
       }
 
+      // Rate limiting: Check if user has made more than 5 join requests in the last 24 hours
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+      
+      const recentRequests = await this.prisma.teamJoinRequest.count({
+        where: {
+          userId: data.userId,
+          requestedAt: {
+            gte: oneDayAgo,
+          },
+        },
+      });
+
+      if (recentRequests >= 5) {
+        throw new BadRequestException(
+          'You have reached the maximum number of join requests (5 per 24 hours). Please try again later.'
+        );
+      }
+
       // Create request
       const request = await this.prisma.teamJoinRequest.create({
         data: {
@@ -511,6 +530,7 @@ export class TeamsService {
 
   /**
    * Get pending join requests for a team (admin/captain only)
+   * Auto-declines requests older than 30 days
    */
   async getPendingJoinRequests(teamId: string): Promise<any[]> {
     try {
@@ -523,11 +543,10 @@ export class TeamsService {
         throw new NotFoundException('Team not found');
       }
 
-      // Get pending requests with user details
+      // Get all requests and filter in memory
       const requests = await this.prisma.teamJoinRequest.findMany({
         where: {
           teamId: teamId,
-          status: 'PENDING',
         },
         include: {
           user: {
@@ -544,7 +563,32 @@ export class TeamsService {
         },
       });
 
-      return requests;
+      // Filter for pending requests and auto-decline stale ones (>30 days)
+      const pendingRequests = requests.filter((r: any) => r.status === 'PENDING');
+      
+      // Auto-decline requests older than 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const staleRequests = pendingRequests.filter((r: any) => r.requestedAt < thirtyDaysAgo);
+      
+      if (staleRequests.length > 0) {
+        await Promise.all(
+          staleRequests.map((r: any) =>
+            this.prisma.teamJoinRequest.update({
+              where: { id: r.id },
+              data: {
+                status: 'DECLINED',
+                respondedAt: new Date(),
+              },
+            })
+          )
+        );
+        console.log(`✓ Auto-declined ${staleRequests.length} stale requests (>30 days)`);
+      }
+      
+      // Return only recent pending requests
+      return pendingRequests.filter((r: any) => r.requestedAt >= thirtyDaysAgo);
     } catch (error) {
       console.error('❌ Error getting pending join requests:', error);
       throw error;
@@ -693,6 +737,69 @@ export class TeamsService {
       return { success: true };
     } catch (error) {
       console.error('❌ Error declining join request:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update team's "looking for players" status
+   * Used by captains to mark team as open/closed for recruitment
+   */
+  async updateTeamLookingStatus(data: {
+    teamId: string;
+    isLookingForPlayers: boolean;
+    userId: string; // Captain ID for validation
+  }): Promise<{
+    teamId: string;
+    teamName: string;
+    isLookingForPlayers: boolean;
+    success: boolean;
+  }> {
+    try {
+      // Verify team exists
+      const team = await this.prisma.team.findUnique({
+        where: { id: data.teamId },
+      });
+
+      if (!team) {
+        throw new NotFoundException('Team not found');
+      }
+
+      // Verify user is a captain of this team
+      const isCaptain = await this.prisma.teamCaptain.findFirst({
+        where: {
+          teamId: data.teamId,
+          captain: {
+            userId: data.userId,
+          },
+        },
+      });
+
+      if (!isCaptain) {
+        throw new BadRequestException('Only team captains can update this setting');
+      }
+
+      // Update team
+      const updatedTeam = await this.prisma.team.update({
+        where: { id: data.teamId },
+        data: {
+          isLookingForPlayers: data.isLookingForPlayers,
+        },
+      });
+
+      const status = data.isLookingForPlayers ? 'open' : 'closed';
+      console.log(
+        `✓ Team ${updatedTeam.name} is now ${status} for recruitment`
+      );
+
+      return {
+        teamId: updatedTeam.id,
+        teamName: updatedTeam.name,
+        isLookingForPlayers: updatedTeam.isLookingForPlayers,
+        success: true,
+      };
+    } catch (error) {
+      console.error('❌ Error updating team looking status:', error);
       throw error;
     }
   }

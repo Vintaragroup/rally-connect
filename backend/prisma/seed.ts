@@ -193,6 +193,53 @@ async function main() {
       }
     }
 
+    // Create test notifications for Ryan
+    await prisma.notification.deleteMany({ where: { userId: ryanId } });
+    
+    const notifications = await Promise.all([
+      prisma.notification.create({
+        data: {
+          userId: ryanId,
+          type: 'team',
+          title: 'Team Invitation',
+          message: 'You\'ve been invited to join the Bocce A Team!',
+          read: false,
+          actionUrl: '/teams/bocce-a',
+        },
+      }),
+      prisma.notification.create({
+        data: {
+          userId: ryanId,
+          type: 'match',
+          title: 'Upcoming Match',
+          message: 'Your Bocce match is scheduled for tomorrow at 2 PM',
+          read: false,
+          actionUrl: '/matches/upcoming',
+        },
+      }),
+      prisma.notification.create({
+        data: {
+          userId: ryanId,
+          type: 'achievement',
+          title: 'Achievement Unlocked!',
+          message: 'You\'ve earned the "Rising Star" achievement',
+          read: false,
+          actionUrl: '/achievements',
+        },
+      }),
+      prisma.notification.create({
+        data: {
+          userId: ryanId,
+          type: 'alert',
+          title: 'Request Pending',
+          message: 'Your team captain transfer request is awaiting approval',
+          read: true, // Mark as read
+          actionUrl: '/notifications',
+        },
+      }),
+    ]);
+    console.log(`✓ Created ${notifications.length} test notifications for Ryan (3 unread)`);
+
     console.log('\n✅ Seed completed!');
   } catch (error) {
     console.error('❌ Seed failed:', error);

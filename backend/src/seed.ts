@@ -125,6 +125,53 @@ async function seed() {
   });
   console.log(`✓ Promoted ryan@vintaragroup.com as admin for ${league.name}`);
 
+  // Create test notifications
+  await prisma.notification.deleteMany({ where: { userId } });
+  
+  const notifications = await Promise.all([
+    prisma.notification.create({
+      data: {
+        userId,
+        type: 'team',
+        title: 'Team Invitation',
+        message: 'You\'ve been invited to join the Bocce A Team!',
+        read: false,
+        actionUrl: '/teams/bocce-a',
+      },
+    }),
+    prisma.notification.create({
+      data: {
+        userId,
+        type: 'match',
+        title: 'Upcoming Match',
+        message: 'Your Bocce match is scheduled for tomorrow at 2 PM',
+        read: false,
+        actionUrl: '/matches/upcoming',
+      },
+    }),
+    prisma.notification.create({
+      data: {
+        userId,
+        type: 'achievement',
+        title: 'Achievement Unlocked!',
+        message: 'You\'ve earned the "Rising Star" achievement',
+        read: false,
+        actionUrl: '/achievements',
+      },
+    }),
+    prisma.notification.create({
+      data: {
+        userId,
+        type: 'alert',
+        title: 'Request Pending',
+        message: 'Your team captain transfer request is awaiting approval',
+        read: true, // Mark as read
+        actionUrl: '/notifications',
+      },
+    }),
+  ]);
+  console.log(`✓ Created ${notifications.length} test notifications (3 unread)`);
+
   console.log('\n✅ Seed completed!');
 }
 

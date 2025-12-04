@@ -33,62 +33,9 @@ interface Message {
 export function TeamChatScreen({ onBack, teamName = "Merion Bocce Club" }: TeamChatScreenProps) {
   const [messageText, setMessageText] = useState("");
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  
-  // Team members
-  const teamMembers: TeamMember[] = [
-    { id: "1", name: "Sarah Chen", initials: "SC", role: "captain", isOnline: true },
-    { id: "2", name: "Mike Johnson", initials: "MJ", role: "player", isOnline: true },
-    { id: "3", name: "Alex Rodriguez", initials: "AR", role: "player", isOnline: false },
-    { id: "4", name: "Emma Walsh", initials: "EW", role: "player", isOnline: true },
-    { id: "5", name: "James Wilson", initials: "JW", role: "player", isOnline: true },
-    { id: "6", name: "Lisa Park", initials: "LP", role: "player", isOnline: false },
-    { id: "7", name: "David Chen", initials: "DC", role: "player", isOnline: true },
-    { id: "8", name: "Maria Garcia", initials: "MG", role: "player", isOnline: true },
-    { id: "9", name: "Tom Anderson", initials: "TA", role: "player", isOnline: false },
-    { id: "10", name: "Sophie Brown", initials: "SB", role: "player", isOnline: true },
-    { id: "11", name: "Kevin Lee", initials: "KL", role: "player", isOnline: true },
-    { id: "12", name: "Rachel Davis", initials: "RD", role: "player", isOnline: false },
-  ];
-
-  // Other team captains for inter-team messaging
-  const otherTeamCaptains: TeamMember[] = [
-    { id: "captain-oak", name: "James Rodriguez", initials: "JR", role: "captain", isOnline: true },
-    { id: "captain-oak-2", name: "Lisa Thompson", initials: "LT", role: "captain", isOnline: true },
-    { id: "captain-cedar", name: "Marcus Johnson", initials: "MJ", role: "captain", isOnline: false },
-    { id: "captain-cedar-2", name: "Emma Davis", initials: "ED", role: "captain", isOnline: true },
-  ];
-
-  // Messages for team chat
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "m1",
-      sender: "Sarah Chen",
-      senderInitials: "SC",
-      content: "Hey team! Who's ready for the match on Saturday?",
-      timestamp: "2:45 PM",
-      isMe: false,
-      isCaptain: true,
-      reactions: [{ emoji: "👍", count: 3, hasReacted: false }],
-    },
-    {
-      id: "m2",
-      sender: "You",
-      senderInitials: "AR",
-      content: "Count me in! Can't wait 🎾",
-      timestamp: "2:47 PM",
-      isMe: true,
-      reactions: [{ emoji: "🔥", count: 1, hasReacted: true }],
-    },
-    {
-      id: "m3",
-      sender: "Mike Johnson",
-      senderInitials: "MJ",
-      content: "What time should we meet at the venue?",
-      timestamp: "2:50 PM",
-      isMe: false,
-      reactions: [{ emoji: "❓", count: 1, hasReacted: false }],
-    },
-  ]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [otherTeamCaptains, setOtherTeamCaptains] = useState<TeamMember[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   // Get current conversation details
   const isTeamChat = activeConversationId === "team-chat" || activeConversationId === null;

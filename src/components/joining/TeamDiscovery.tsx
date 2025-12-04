@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, AlertCircle, Loader, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { SportIcon } from '@/components/SportIcon';
 import { getTeamsLookingForPlayers, requestJoinTeam } from '@/lib/api/teamsApi';
@@ -65,10 +66,32 @@ export function TeamDiscovery({
     try {
       await requestJoinTeam(team.id, userId);
       console.log(`✓ Requested to join ${team.name}`);
+      toast.success(`Request sent to ${team.name}`, {
+        description: 'The captain will review your request shortly',
+      });
       onTeamSelected(team);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to request join';
       console.error('❌ Error requesting join:', errorMessage);
+      
+      // Check for specific error messages
+      if (errorMessage.includes('already has a pending request')) {
+        toast.error('Request already pending', {
+          description: 'You already have a pending request for this team',
+        });
+      } else if (errorMessage.includes('already a member')) {
+        toast.error('Already a member', {
+          description: 'You are already a member of this team',
+        });
+      } else if (errorMessage.includes('maximum number of join requests')) {
+        toast.error('Too many requests', {
+          description: 'You can only submit 5 requests per 24 hours',
+        });
+      } else {
+        toast.error('Request failed', {
+          description: errorMessage,
+        });
+      }
       setError(errorMessage);
       onError?.(errorMessage);
     } finally {
@@ -104,14 +127,20 @@ export function TeamDiscovery({
                 <SportIcon sport={team.sportName.toLowerCase() as any} size={48} />
 
                 <div className="flex-1">
-                  <h3 className="text-base font-medium mb-1">{team.name}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-base font-medium">{team.name}</h3>
+                    <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                      <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                      Open for Recruitment
+                    </span>
+                  </div>
 
                   <div className="flex items-center gap-4 text-sm text-[var(--color-text-secondary)] mb-3">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
                       {team.currentPlayerCount} / {team.minPlayersNeeded} players
                     </span>
-                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                       Need {team.playersNeeded} more
                     </span>
                   </div>

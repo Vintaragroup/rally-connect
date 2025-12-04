@@ -69,12 +69,10 @@ export function OnboardingFlow({ onComplete, isReturningUser = false }: Onboardi
     
     // For returning users, skip profile and team setup - go straight to complete
     if (isReturningUser) {
-      // Mock team name for returning users
-      setData({ 
-        ...data, 
+      setData((prev) => ({ 
+        ...prev, 
         role,
-        team: { name: role === "captain" ? "Merion Bocce Club" : "Your Team" }
-      });
+      }));
       setCurrentStep("complete");
     } else {
       setCurrentStep("profile-setup");

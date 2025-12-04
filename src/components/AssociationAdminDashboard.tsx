@@ -6,6 +6,7 @@ import CaptainRequestsTab from './admin-tabs/CaptainRequestsTab';
 import CaptainInvitationsTab from './admin-tabs/CaptainInvitationsTab';
 import LeagueRulesTab from './admin-tabs/LeagueRulesTab';
 import AdminsTab from './admin-tabs/AdminsTab';
+import InvitationCodesTab from './admin-tabs/InvitationCodesTab';
 
 interface League {
   id: string;
@@ -128,9 +129,10 @@ const AssociationAdminDashboard: React.FC<{ userId: string }> = ({ userId }) => 
 
       {/* Tabs */}
       <Tabs defaultValue="captain-requests" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="captain-requests">Captain Requests</TabsTrigger>
           <TabsTrigger value="invitations">Invite Captains</TabsTrigger>
+          <TabsTrigger value="codes">Invitation Codes</TabsTrigger>
           <TabsTrigger value="admins">League Admins</TabsTrigger>
           <TabsTrigger value="rules">League Rules</TabsTrigger>
         </TabsList>
@@ -141,6 +143,10 @@ const AssociationAdminDashboard: React.FC<{ userId: string }> = ({ userId }) => 
 
         <TabsContent value="invitations" className="space-y-4">
           <CaptainInvitationsTab leagueId={selectedLeagueId} userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="codes" className="space-y-4">
+          <InvitationCodesTab leagueId={selectedLeagueId} userId={userId} />
         </TabsContent>
 
         <TabsContent value="admins" className="space-y-4">

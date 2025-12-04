@@ -81,6 +81,7 @@ export default function App() {
   const [userRole, setUserRole] = useState<"player" | "captain" | "admin" | null>(null);
   const [isAssociationAdmin, setIsAssociationAdmin] = useState(false);
   const [userSynced, setUserSynced] = useState(false);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   // Sync user to backend on first authentication
   useEffect(() => {
@@ -538,6 +539,7 @@ export default function App() {
           }}
         >
           <MoreScreen 
+            notificationCount={unreadNotificationCount}
             onViewTeam={() => {
               setCurrentScreen("team-detail");
               setActiveTab("teams");
@@ -687,6 +689,7 @@ export default function App() {
         >
           <NotificationsScreen 
             onBack={() => setCurrentScreen("home")}
+            onUnreadCountChange={setUnreadNotificationCount}
           />
         </AppShell>
       )}

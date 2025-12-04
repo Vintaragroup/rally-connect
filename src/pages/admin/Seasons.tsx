@@ -34,10 +34,18 @@ export function Seasons({ onMenuToggle, isMobileMenuOpen }: SeasonsProps) {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '/api';
         const response = await fetch(`${apiUrl}/seasons`);
-        const data = response.ok ? await response.json() : [];
-        setSeasons(data);
+        if (response.status === 404) {
+          // Endpoint doesn't exist yet, show empty state
+          setSeasons([]);
+        } else if (response.ok) {
+          const data = await response.json();
+          setSeasons(Array.isArray(data) ? data : []);
+        } else {
+          setSeasons([]);
+        }
       } catch (err) {
         console.error('Error fetching seasons:', err);
+        setSeasons([]);
       } finally {
         setLoading(false);
       }

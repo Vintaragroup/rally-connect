@@ -95,7 +95,7 @@ export function Teams() {
       key: 'captains',
       header: 'Captains',
       render: (team) =>
-        team.captains.length > 0 ? (
+        team.captains && team.captains.length > 0 ? (
           <AvatarGroup avatars={team.captains} max={2} />
         ) : (
           <span className="text-sm text-gray-400">No captain</span>

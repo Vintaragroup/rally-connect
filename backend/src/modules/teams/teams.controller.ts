@@ -155,4 +155,32 @@ export class TeamsController {
 
     return this.teamsService.declineJoinRequest(requestId);
   }
+
+  /**
+   * POST /teams/:teamId/looking-for-players
+   * Update team's recruitment status (captain only)
+   * Marks team as open/closed for recruitment in team discovery
+   * 
+   * @param teamId - Team ID
+   * @param isLookingForPlayers - Whether team is looking for players
+   * @param userId - Captain ID (for validation)
+   * @returns { teamId, teamName, isLookingForPlayers, success }
+   */
+  @Post(':teamId/looking-for-players')
+  async updateTeamLookingStatus(
+    @Param('teamId') teamId: string,
+    @Body() body: { isLookingForPlayers: boolean; userId: string }
+  ) {
+    if (!teamId || body.isLookingForPlayers === undefined || !body.userId) {
+      throw new BadRequestException(
+        'teamId, isLookingForPlayers, and userId are required'
+      );
+    }
+
+    return this.teamsService.updateTeamLookingStatus({
+      teamId,
+      isLookingForPlayers: body.isLookingForPlayers,
+      userId: body.userId,
+    });
+  }
 }

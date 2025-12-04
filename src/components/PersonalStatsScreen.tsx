@@ -35,93 +35,9 @@ interface Match {
 
 export function PersonalStatsScreen({ onBack, onViewAchievements }: PersonalStatsScreenProps) {
   const [selectedSport, setSelectedSport] = useState("all");
-
-  const stats: StatCard[] = [
-    {
-      label: "Overall Rating",
-      value: "1,450",
-      change: "+50",
-      trend: "up",
-      icon: Trophy,
-      color: "text-amber-600",
-    },
-    {
-      label: "Win Rate",
-      value: "70%",
-      change: "+5%",
-      trend: "up",
-      icon: Target,
-      color: "text-green-600",
-    },
-    {
-      label: "Current Streak",
-      value: "3W",
-      change: "Active",
-      trend: "up",
-      icon: Flame,
-      color: "text-red-600",
-    },
-    {
-      label: "Matches Played",
-      value: "20",
-      change: "This season",
-      trend: "neutral",
-      icon: Calendar,
-      color: "text-blue-600",
-    },
-  ];
-
-  const recentMatches: Match[] = [
-    {
-      id: "m1",
-      date: "Dec 18",
-      opponent: "Radnor Rollers",
-      result: "W",
-      score: "5-3",
-      personalStats: { points: 12, assists: 3, rating: 8.5 },
-    },
-    {
-      id: "m2",
-      date: "Dec 15",
-      opponent: "Wayne Warriors",
-      result: "W",
-      score: "6-2",
-      personalStats: { points: 15, assists: 4, rating: 9.0 },
-    },
-    {
-      id: "m3",
-      date: "Dec 11",
-      opponent: "Haverford Hawks",
-      result: "W",
-      score: "4-3",
-      personalStats: { points: 8, assists: 2, rating: 7.5 },
-    },
-    {
-      id: "m4",
-      date: "Dec 8",
-      opponent: "Devon Dynamos",
-      result: "L",
-      score: "2-5",
-      personalStats: { points: 5, assists: 1, rating: 6.0 },
-    },
-  ];
-
-  const milestones = [
-    {
-      id: "ms1",
-      title: "Next Rating Milestone",
-      current: 1450,
-      target: 1500,
-      reward: "50 Achievement Points",
-    },
-    {
-      id: "ms2",
-      title: "Next Win Milestone",
-      current: 14,
-      target: 20,
-      reward: "Hot Streak Badge",
-    },
-  ];
+  const [stats, setStats] = useState<StatCard[]>([]);
+  const [recentMatches, setRecentMatches] = useState<Match[]>([]);
+  const [milestones, setMilestones] = useState<any[]>([]);
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

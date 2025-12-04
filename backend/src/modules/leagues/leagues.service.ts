@@ -70,7 +70,7 @@ export class LeaguesService {
       });
 
       // Format response with player counts
-      const formattedTeams = teams.map(team => ({
+      const formattedTeams = teams.map((team: any) => ({
         id: team.id,
         name: team.name,
         sportId: team.sportId,
